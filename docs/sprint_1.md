@@ -84,3 +84,31 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - La app muestra layout base con navegación lateral en escritorio y navegación compacta en móvil.
 - Todo el texto visible del frontend está en español.
 - No se implementan CRUD, formularios funcionales ni conexión al backend en esta tarea.
+
+## Tarea T-005
+
+- Definir y documentar el modelo de datos MVP para centros de costo, conceptos de gasto, gastos planificados y gastos reales.
+- Documentar propósito, campos, tipos sugeridos, validaciones, relaciones, índices y restricciones.
+- Documentar que los montos usan `DECIMAL(14,2)` y no `FLOAT`.
+- Documentar que la desviación monetaria se calcula como `gasto real - gasto planificado`.
+- Documentar que desviación, análisis y dashboard se calculan desde gastos planificados y gastos reales, sin tablas principales persistidas para esos resultados.
+- Documentar que las fechas funcionales del negocio usan `America/Lima`.
+- Crear o actualizar documentación de soporte para diccionario de datos y decisiones del modelo.
+- No implementar modelos SQLAlchemy, migraciones Alembic, CRUD, endpoints de negocio, formularios frontend ni seeds ejecutables en esta tarea.
+
+## Criterios de aceptación T-005
+
+- Existe documentación actualizada del modelo de datos MVP en `docs/modelo_datos.md`.
+- Existen documentos de soporte para diccionario de datos y decisiones del modelo.
+- El modelo incluye `cost_centers`, `expense_concepts`, `planned_expenses` y `actual_expenses`.
+- Cada tabla tiene propósito, campos, tipos sugeridos, validaciones e índices.
+- Se documenta que los montos usan `DECIMAL(14,2)` y no `FLOAT`.
+- Se documenta que la desviación es `gasto real - gasto planificado`.
+- Se documenta que desviación y análisis no se guardan como tablas principales.
+- Se documenta la zona horaria `America/Lima` para fechas funcionales.
+- Se documenta la relación entre centros, conceptos, gastos planificados y gastos reales.
+- Se documenta la restricción única de `planned_expenses`.
+- Se documenta que `actual_expenses` permite múltiples registros por mes, centro de costo y concepto.
+- No se crean modelos SQLAlchemy ni migraciones de tablas de negocio.
+- No se modifica el frontend.
+- Los archivos quedan en UTF-8 y sin mojibake.

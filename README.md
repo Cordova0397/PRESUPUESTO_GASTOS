@@ -28,6 +28,14 @@ Base técnica inicial del proyecto para el MVP de control presupuestal.
 - `docs/`
 - `scripts/`
 
+## Documentación del MVP
+
+- [Alcance MVP](docs/alcance.md)
+- [Reglas de negocio](docs/reglas_negocio.md)
+- [Modelo de datos MVP](docs/modelo_datos.md)
+- [Diccionario de datos MVP](docs/diccionario_datos_mvp.md)
+- [Decisiones del modelo de datos](docs/decisiones_modelo_datos.md)
+
 ## Instalación y ejecución del backend
 
 La configuración del backend se toma desde `backend/.env`. El archivo se puede crear desde `backend/.env.example` usando `instalar_backend.bat` o `run_backend.bat`.
@@ -67,7 +75,7 @@ Para validar el backend:
 run_backend.bat
 ```
 
-Endpoints de validacion:
+Endpoints de validación:
 
 - `GET http://127.0.0.1:8000/health`
 - `GET http://127.0.0.1:8000/health/db`
@@ -117,6 +125,6 @@ Resumen del frontend actual:
 ## Criterios base del proyecto
 
 - Todo texto del sistema y la documentación se mantiene en español.
-- Los archivos fuente y de configuracion deben guardarse en UTF-8.
+- Los archivos fuente y de configuración deben guardarse en UTF-8.
 - La zona horaria de negocio a considerar en fases posteriores es `America/Lima`.
 - El MVP inicial no incluye login, auditoría ni CRUD completo.
