@@ -50,6 +50,37 @@ Endpoint de prueba:
 
 Para probar `/health/db`, MySQL debe estar encendido y `DATABASE_URL` debe apuntar a una base de datos valida. El endpoint no expone la URL de conexion ni la contrasena si ocurre un error.
 
+## Base de datos y migraciones
+
+La configuracion de base de datos se toma desde `backend/.env`. Este archivo no debe subirse a Git; `backend/.env.example` funciona como plantilla sin secretos reales.
+
+Para crear la base MySQL local, usa como referencia:
+
+```sql
+scripts/mysql_create_database.sql.example
+```
+
+Para validar el backend:
+
+```bat
+run_backend.bat
+```
+
+Endpoints de validacion:
+
+- `GET http://127.0.0.1:8000/health`
+- `GET http://127.0.0.1:8000/health/db`
+
+Para validar Alembic desde la raiz:
+
+```bat
+db_current.bat
+db_history.bat
+db_upgrade.bat
+```
+
+`/health/db`, `db_current.bat` y `db_upgrade.bat` requieren que MySQL este encendido y que `DATABASE_URL` tenga credenciales locales validas.
+
 ## Instalacion y ejecucion del frontend
 
 Instalar dependencias:

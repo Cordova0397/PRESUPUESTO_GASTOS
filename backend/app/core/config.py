@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_env: str = Field(default="local", alias="APP_ENV")
     app_timezone: str = Field(default="America/Lima", alias="APP_TIMEZONE")
     database_url: str = Field(
-        default="mysql+pymysql://usuario:password@localhost:3306/presupuesto_gastos_db",
+        default="mysql+pymysql://presupuesto_user:CAMBIAR_PASSWORD_LOCAL@localhost:3306/presupuesto_gastos_db",
         alias="DATABASE_URL",
     )
     cors_origins: Annotated[list[str], NoDecode] = Field(

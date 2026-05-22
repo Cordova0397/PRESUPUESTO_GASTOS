@@ -21,6 +21,16 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - Mantener `GET /health` y agregar `GET /health/db` para validar conexion a MySQL cuando corresponda.
 - No implementar CRUD, login, auditoria ni modelos de negocio en esta tarea.
 
+## Tarea T-003
+
+- Configurar MySQL como base de datos objetivo.
+- Configurar Alembic dentro de `backend/`.
+- Crear scripts Windows para consultar historial, revision actual y ejecutar migraciones.
+- Agregar SQL de ejemplo para crear base y usuario local sin secretos reales.
+- Dejar migracion inicial vacia para validar el flujo de migraciones.
+- Documentar conexion, variables de entorno y reglas basicas de base de datos.
+- No crear tablas de negocio, CRUD, login, auditoria ni calculos de desviacion en esta tarea.
+
 ## Criterios de aceptacion
 
 - La raiz contiene `backend`, `frontend`, `docs` y `scripts`.
@@ -42,3 +52,16 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - Existe `get_db()` para futuras rutas.
 - `GET /health/db` valida la conexion sin exponer secretos si falla.
 - El backend puede arrancar aunque MySQL no este disponible.
+
+## Criterios de aceptacion T-003
+
+- Existe `backend/alembic.ini`.
+- Existe `backend/alembic/env.py` y usa `settings.database_url`.
+- Alembic usa `Base.metadata`.
+- Existe `backend/alembic/versions/`.
+- Existe una migracion inicial vacia para validar `upgrade head`.
+- Existen `db_current.bat`, `db_history.bat` y `db_upgrade.bat`.
+- Existe `scripts/mysql_create_database.sql.example` sin secretos reales.
+- `backend/.env.example` contiene `DATABASE_URL` con placeholder.
+- `backend/.env`, `_bundles/` y `bundle_*.txt` estan ignorados por Git.
+- No se crean tablas de negocio todavia.
