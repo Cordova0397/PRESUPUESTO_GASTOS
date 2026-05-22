@@ -65,3 +65,22 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - `backend/.env.example` contiene `DATABASE_URL` con placeholder.
 - `backend/.env`, `_bundles/` y `bundle_*.txt` estan ignorados por Git.
 - No se crean tablas de negocio todavia.
+
+## Tarea T-004
+
+- Configurar Tailwind CSS para el frontend Vite + React + TypeScript.
+- Configurar React Router DOM con rutas base del MVP.
+- Crear layout base responsive con sidebar, topbar y contenedor principal.
+- Crear páginas placeholder en español para dashboard, gastos planificados, gastos reales, desviación de gastos y análisis de gastos.
+- Mantener visible la regla de negocio: desviación = real - planificado.
+- No implementar CRUD, conexión a API, login, auditoría ni cálculos reales en esta tarea.
+
+## Criterios de aceptación T-004
+
+- `frontend/` instala dependencias con `instalar_frontend.bat`.
+- `run_frontend.bat` levanta la app local en `http://127.0.0.1:5173`.
+- Tailwind CSS queda configurado y funcionando en `frontend/src/styles.css`.
+- Existen las rutas `/dashboard`, `/planned-expenses`, `/actual-expenses`, `/variance` y `/analysis`.
+- La app muestra layout base con navegación lateral en escritorio y navegación compacta en móvil.
+- Todo el texto visible del frontend está en español.
+- No se implementan CRUD, formularios funcionales ni conexión al backend en esta tarea.

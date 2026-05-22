@@ -1,13 +1,9 @@
+import { RouterProvider } from "react-router-dom";
+
+import { router } from "./router";
+
 function App() {
-  return (
-    <main className="pantalla-inicial">
-      <section className="hero">
-        <p className="eyebrow">Sistema base</p>
-        <h1>PRESUPUESTO GASTOS</h1>
-        <p className="descripcion">MVP de control presupuestal</p>
-      </section>
-    </main>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
