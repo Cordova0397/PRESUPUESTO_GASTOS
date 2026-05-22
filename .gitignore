@@ -1,0 +1,30 @@
+.venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.env
+backend/.env
+node_modules/
+frontend/node_modules/
+dist/
+build/
+frontend/dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+Thumbs.db
+.DS_Store
+
+# Bundles locales para revision
+_bundles/
+bundle_*.txt
+
+# Archivos locales de entorno
+*.local
+*.secret
+*.bak
