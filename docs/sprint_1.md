@@ -141,3 +141,31 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se crean endpoints CRUD, schemas Pydantic ni servicios en esta tarea.
 - No se modifica el frontend.
 - Los archivos quedan en UTF-8 y sin mojibake.
+
+## Tarea T-007
+
+- Crear seed inicial idempotente de catálogos en `scripts/seed_initial_catalogs.py`.
+- Cargar 5 centros de costo y 37 conceptos de gasto tomados del Excel actual.
+- El seed usa SQLAlchemy ORM y `SessionLocal`. Crea registros si no existen o los actualiza si ya existen.
+- Crear `seed_catalogs.bat` en la raíz para ejecutar el seed en Windows.
+- El seed ejecuta desde `backend/` como directorio de trabajo para que `pydantic-settings` encuentre `backend/.env` correctamente.
+- No se cargan gastos planificados ni gastos reales.
+- No se implementan CRUD, endpoints, schemas Pydantic ni servicios.
+- Crear `docs/catalogos_iniciales.md` con referencia de centros y conceptos.
+
+## Criterios de aceptación T-007
+
+- Existe `scripts/seed_initial_catalogs.py` que usa ORM y `SessionLocal`.
+- Existe `seed_catalogs.bat` en la raíz.
+- El seed es idempotente: ejecutado dos veces no duplica registros.
+- Primera ejecución: 5 centros creados, 37 conceptos creados.
+- Segunda ejecución: 0 creados, 5 centros actualizados, 37 conceptos actualizados.
+- `SELECT COUNT(*) FROM cost_centers` = 5.
+- `SELECT COUNT(*) FROM expense_concepts` = 37.
+- `SELECT COUNT(*) FROM planned_expenses` = 0.
+- `SELECT COUNT(*) FROM actual_expenses` = 0.
+- Los nombres con tildes y caracteres especiales se almacenan correctamente en UTF-8 (`utf8mb4`) en MySQL.
+- Existe `docs/catalogos_iniciales.md` con referencia completa de centros y conceptos.
+- No se crean endpoints, schemas ni servicios en esta tarea.
+- No se modifica el frontend.
+- Los archivos quedan en UTF-8 y sin mojibake.

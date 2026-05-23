@@ -92,6 +92,21 @@ db_upgrade.bat
 
 Las tablas del MVP (`cost_centers`, `expense_concepts`, `planned_expenses`, `actual_expenses`) se crean al aplicar la migración `0002_create_mvp_tables` con `db_upgrade.bat`. Los timestamps `created_at` y `updated_at` se almacenan como `DATETIME` naive en hora funcional `America/Lima`, no UTC.
 
+## Catálogos iniciales
+
+Para cargar los catálogos iniciales (centros de costo y conceptos de gasto) en MySQL:
+
+```bat
+seed_catalogs.bat
+```
+
+Requisitos previos:
+- MySQL debe estar encendido.
+- `DATABASE_URL` debe tener credenciales locales válidas en `backend/.env`.
+- Las migraciones deben estar aplicadas: `db_upgrade.bat`.
+
+El seed es idempotente. Puede ejecutarse más de una vez sin duplicar registros. Para referencia completa de centros y conceptos iniciales, ver [docs/catalogos_iniciales.md](docs/catalogos_iniciales.md).
+
 ## Instalación y ejecución del frontend
 
 Instalar dependencias:
