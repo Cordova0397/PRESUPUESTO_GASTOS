@@ -153,6 +153,36 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se implementan CRUD, endpoints, schemas Pydantic ni servicios.
 - Crear `docs/catalogos_iniciales.md` con referencia de centros y conceptos.
 
+## Tarea T-008
+
+- Crear endpoints CRUD de centros de costo usando arquitectura en capas: schemas Pydantic v2, repository, service y router FastAPI.
+- Base path: `/api/cost-centers`.
+- Endpoints: GET listado con filtros, GET por ID, POST crear, PUT actualizar completo, PATCH actualizar parcial, DELETE baja lógica.
+- El DELETE no elimina físicamente; establece `is_active = false`.
+- No se implementan login, auditoría, CRUD de conceptos, CRUD de gastos planificados ni CRUD de gastos reales en esta tarea.
+- No se modifica el frontend.
+
+## Criterios de aceptación T-008
+
+- Existe `backend/app/schemas/cost_center.py` con schemas Pydantic v2.
+- Existe `backend/app/repositories/cost_center_repository.py` sin lógica HTTP.
+- Existe `backend/app/services/cost_center_service.py` con reglas de negocio.
+- Existe `backend/app/api/cost_centers.py` con el router FastAPI.
+- `backend/app/main.py` registra el router de centros de costo.
+- `GET /api/cost-centers` lista los 5 centros cargados por el seed.
+- `GET /api/cost-centers/{id}` retorna un centro existente o 404 en español.
+- `POST /api/cost-centers` crea un centro nuevo con status 201.
+- `POST` con code duplicado retorna 409 con mensaje en español.
+- `PUT /api/cost-centers/{id}` actualiza un centro completo.
+- `PATCH /api/cost-centers/{id}` permite actualización parcial de campos.
+- `DELETE /api/cost-centers/{id}` deja `is_active = false`, sin borrar el registro.
+- `GET` con `is_active=true` filtra solo activos.
+- `GET` con `search=X` filtra por code o name (case-insensitive).
+- `/health` y `/health/db` siguen funcionando sin cambios.
+- No se implementa login ni auditoría.
+- No se modifica el frontend.
+- No hay mojibake; archivos en UTF-8.
+
 ## Criterios de aceptación T-007
 
 - Existe `scripts/seed_initial_catalogs.py` que usa ORM y `SessionLocal`.

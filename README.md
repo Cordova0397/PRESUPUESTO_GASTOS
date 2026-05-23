@@ -139,6 +139,62 @@ Resumen del frontend actual:
 - Páginas placeholder en español para dashboard, gastos planificados, gastos reales, desviación y análisis.
 - Sin CRUD, sin consumo de API, sin login y sin auditoría en esta fase.
 
+## API de centros de costo
+
+Base path: `http://127.0.0.1:8000/api/cost-centers`
+
+| Método | Ruta | Descripción | Respuestas |
+|--------|------|-------------|------------|
+| GET | `/api/cost-centers` | Lista centros de costo | 200 |
+| GET | `/api/cost-centers/{id}` | Obtiene un centro por ID | 200 / 404 |
+| POST | `/api/cost-centers` | Crea un centro nuevo | 201 / 409 / 422 |
+| PUT | `/api/cost-centers/{id}` | Actualiza completo | 200 / 404 / 409 / 422 |
+| PATCH | `/api/cost-centers/{id}` | Actualización parcial | 200 / 404 / 409 / 422 |
+| DELETE | `/api/cost-centers/{id}` | Baja lógica (`is_active=false`) | 200 / 404 |
+
+El DELETE no elimina físicamente el registro; establece `is_active = false`.
+
+Query params disponibles en GET lista:
+
+- `skip` (int, default 0): registros a saltar.
+- `limit` (int, default 100, máx 200): registros a retornar.
+- `is_active` (bool, opcional): filtra por estado activo/inactivo.
+- `search` (str, opcional): filtra por code o name (case-insensitive).
+
+### Ejemplos de prueba con PowerShell
+
+```powershell
+# Listar todos
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers"
+
+# Solo activos
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers?is_active=true"
+
+# Buscar por nombre o código
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers?search=ventas"
+
+# Obtener por ID
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers/1"
+
+# Crear
+$body = @{
+    code = "TEST_CC"
+    name = "Centro de prueba"
+    description = "Registro temporal"
+    color = "#2563eb"
+    sort_order = 999
+    is_active = $true
+} | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/cost-centers" -ContentType "application/json" -Body $body
+
+# Actualizar parcial (PATCH)
+$body = @{ name = "Nombre actualizado" } | ConvertTo-Json
+Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/cost-centers/6" -ContentType "application/json" -Body $body
+
+# Baja lógica (DELETE — no borra, deja is_active=false)
+Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/cost-centers/6"
+```
+
 ## Criterios base del proyecto
 
 - Todo texto del sistema y la documentación se mantiene en español.
