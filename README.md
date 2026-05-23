@@ -90,6 +90,8 @@ db_upgrade.bat
 
 `/health/db`, `db_current.bat` y `db_upgrade.bat` requieren que MySQL esté encendido y que `DATABASE_URL` tenga credenciales locales válidas.
 
+Las tablas del MVP (`cost_centers`, `expense_concepts`, `planned_expenses`, `actual_expenses`) se crean al aplicar la migración `0002_create_mvp_tables` con `db_upgrade.bat`. Los timestamps `created_at` y `updated_at` se almacenan como `DATETIME` naive en hora funcional `America/Lima`, no UTC.
+
 ## Instalación y ejecución del frontend
 
 Instalar dependencias:

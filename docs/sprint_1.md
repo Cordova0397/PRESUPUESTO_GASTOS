@@ -112,3 +112,32 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se crean modelos SQLAlchemy ni migraciones de tablas de negocio.
 - No se modifica el frontend.
 - Los archivos quedan en UTF-8 y sin mojibake.
+
+## Tarea T-006
+
+- Crear modelos SQLAlchemy 2.0 para las 4 tablas MVP: `cost_centers`, `expense_concepts`, `planned_expenses`, `actual_expenses`.
+- Crear helper de zona horaria `America/Lima` en `backend/app/core/timezone.py` con `now_lima()`.
+- Crear `TimestampMixin` para `created_at` y `updated_at` en hora funcional de Perú.
+- Crear migración Alembic real `backend/alembic/versions/0002_create_mvp_tables.py` con `down_revision = 0001_initial_empty`.
+- Asegurar tipos MySQL adecuados: `BIGINT UNSIGNED` para IDs, `SMALLINT UNSIGNED` para `year`, `TINYINT UNSIGNED` para `month`, `DECIMAL(14,2)` para montos, `DATE` para `expense_date` y `DATETIME` para timestamps.
+- Asegurar restricciones únicas, check constraints, foreign keys e índices con nombres explícitos.
+- Validar que `db_upgrade.bat` y `db_current.bat` ejecuten correctamente contra MySQL local.
+- Mantener documentación actualizada en `docs/sprint_1.md` y `README.md`.
+- En esta tarea NO se implementan CRUD, endpoints de negocio, schemas Pydantic, servicios, formularios frontend, seeds ejecutables, login ni auditoría.
+
+## Criterios de aceptación T-006
+
+- Existen modelos SQLAlchemy 2.0 con `Mapped` y `mapped_column` para `cost_centers`, `expense_concepts`, `planned_expenses` y `actual_expenses`.
+- Existe `backend/app/core/timezone.py` con `now_lima()` basada en `ZoneInfo("America/Lima")`.
+- Existe `TimestampMixin` en `backend/app/models/mixins.py` usando `now_lima` como `default` y `onupdate`.
+- Los montos usan `DECIMAL(14,2)` y no `FLOAT` ni `DOUBLE`.
+- Existen relaciones entre centros, conceptos, planificados y reales con `back_populates`.
+- `backend/app/models/__init__.py` registra los 4 modelos.
+- `backend/alembic/env.py` importa `app.models` para que `Base.metadata` los conozca.
+- Existe la migración `0002_create_mvp_tables.py` con `upgrade()` que crea las 4 tablas y `downgrade()` que las elimina en orden inverso.
+- La migración incluye FKs, restricciones únicas, check constraints e índices con nombres explícitos.
+- `db_upgrade.bat` ejecuta correctamente y `db_current.bat` reporta `0002_create_mvp_tables (head)`.
+- `GET /health` y `GET /health/db` siguen funcionando.
+- No se crean endpoints CRUD, schemas Pydantic ni servicios en esta tarea.
+- No se modifica el frontend.
+- Los archivos quedan en UTF-8 y sin mojibake.
