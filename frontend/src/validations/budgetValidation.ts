@@ -74,7 +74,12 @@ export const actualAmountInputSchema = z
   .string()
   .min(1, { message: "Ingresa un monto válido mayor a cero." })
   .superRefine((val, ctx) => {
-    const normalized = normalizeDecimalSeparator(val.trim());
+    const trimmed = val.trim();
+    const normalized = normalizeDecimalSeparator(trimmed);
+    if (normalized.startsWith("-")) {
+      ctx.addIssue({ code: "custom" as const, message: "Ingresa un monto válido mayor a cero." });
+      return;
+    }
     if (!isMoneyFormat(normalized)) {
       ctx.addIssue({ code: "custom" as const, message: "El monto debe tener máximo 2 decimales." });
       return;

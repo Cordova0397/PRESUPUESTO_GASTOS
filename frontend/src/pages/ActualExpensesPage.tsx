@@ -31,6 +31,8 @@ export function ActualExpensesPage() {
   const [editingRecord, setEditingRecord] = useState<ActualExpense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<Msg | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState<FiltersType>({
     year: getCurrentYearInLima(),
@@ -123,23 +125,35 @@ export function ActualExpensesPage() {
     setMessage(null);
   }
 
-  async function handleDelete(id: number) {
-    const confirmed = window.confirm(
-      `¿Eliminar el gasto real #${id}? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed) return;
+  function handleDelete(id: number) {
+    setDeleteTargetId(id);
+    setMessage(null);
+  }
+
+  async function handleConfirmDelete() {
+    if (deleteTargetId === null) return;
+    const targetId = deleteTargetId;
+    setIsDeleting(true);
     setMessage(null);
     try {
-      await deleteActualExpense(id);
-      if (editingRecord?.id === id) setEditingRecord(null);
-      showMessage("ok", `Gasto #${id} eliminado correctamente.`);
+      await deleteActualExpense(targetId);
+      if (editingRecord?.id === targetId) setEditingRecord(null);
+      showMessage("ok", `Gasto #${targetId} eliminado correctamente.`);
+      setDeleteTargetId(null);
       await loadRecords();
     } catch (err) {
       showMessage(
         "error",
-        err instanceof Error ? err.message : `Error al eliminar el gasto #${id}.`,
+        err instanceof Error ? err.message : `Error al eliminar el gasto #${targetId}.`,
       );
+    } finally {
+      setIsDeleting(false);
     }
+  }
+
+  function handleCancelDelete() {
+    if (isDeleting) return;
+    setDeleteTargetId(null);
   }
 
   function handleFiltersApply(filters: FiltersType) {
@@ -254,6 +268,47 @@ export function ActualExpensesPage() {
           onDelete={handleDelete}
         />
       </section>
+
+      {deleteTargetId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-actual-expense-title"
+            className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-panel"
+          >
+            <h2
+              id="delete-actual-expense-title"
+              className="text-lg font-semibold text-slate-950"
+            >
+              Eliminar gasto real
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              ¿Eliminar el gasto real #{deleteTargetId}? Esta acción no se puede
+              deshacer.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmDelete()}
+                disabled={isDeleting}
+                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
