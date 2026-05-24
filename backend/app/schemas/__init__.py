@@ -20,3 +20,10 @@ from app.schemas.planned_expense import (  # noqa: F401
     PlannedExpenseRead,
     PlannedExpenseUpdate,
 )
+from app.schemas.actual_expense import (  # noqa: F401
+    ActualExpenseCreate,
+    ActualExpenseDeleteResponse,
+    ActualExpensePatch,
+    ActualExpenseRead,
+    ActualExpenseUpdate,
+)

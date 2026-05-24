@@ -288,6 +288,48 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se modifica el frontend.
 - No hay mojibake; archivos en UTF-8.
 
+## Tarea T-013
+
+- Crear endpoints CRUD de gastos reales usando arquitectura en capas: schemas Pydantic v2, repository, service y router FastAPI.
+- Base path: `/api/actual-expenses`.
+- Endpoints: GET listado con filtros, GET por ID, POST crear, PUT actualizar completo, PATCH actualizar parcial, DELETE eliminacion fisica.
+- `amount` usa `Decimal` (no float). Validado `> 0` (gastos reales no admiten cero).
+- `year` y `month` se derivan desde `expense_date` (componentes del objeto `date` en logica de negocio America/Lima).
+- Se permiten multiples registros para el mismo periodo, centro de costo y concepto (transaccional, sin restriccion de unicidad).
+- Se valida que `expense_concept_id` pertenezca al `cost_center_id`.
+- Filtros: `year`, `month`, `cost_center_id`, `expense_concept_id`, `date_from`, `date_to`, `supplier`, `document_number`, `search`.
+- `search` busca en `supplier`, `document_number`, `description` y `notes`.
+- `date_from > date_to` retorna 422 con mensaje en espanol.
+- Ordenacion: `expense_date DESC`, `id DESC`.
+- DELETE elimina fisicamente el registro en el MVP.
+- La respuesta incluye campos enriquecidos: `cost_center_code`, `cost_center_name`, `expense_concept_code`, `expense_concept_name`.
+- Strings opcionales normalizados con strip; vacios se guardan como None.
+- No se implementan frontend, login, auditoria ni calculos de desviacion.
+
+## Criterios de aceptacion T-013
+
+- Existe `backend/app/schemas/actual_expense.py` con schemas Pydantic v2 y `Decimal`.
+- Existe `backend/app/repositories/actual_expense_repository.py` sin logica HTTP.
+- Existe `backend/app/services/actual_expense_service.py` con validaciones de negocio.
+- Existe `backend/app/api/actual_expenses.py` con el router FastAPI.
+- `backend/app/main.py` registra el router de gastos reales.
+- `GET /api/actual-expenses` lista registros ordenados por `expense_date DESC`, `id DESC`.
+- Filtros funcionales por todos los parametros documentados.
+- `GET /api/actual-expenses/{id}` retorna el registro o 404 con mensaje en espanol.
+- `POST /api/actual-expenses` crea un registro con status 201.
+- `POST` permite multiples registros con el mismo periodo, centro y concepto.
+- `POST` con `expense_concept_id` que no pertenece al centro retorna 422.
+- `POST` con `amount <= 0` retorna 422.
+- `PUT` actualiza el registro completo con validaciones.
+- `PATCH` actualiza parcialmente; valida estado final combinado antes de persistir.
+- `DELETE` elimina fisicamente el registro.
+- Campos enriquecidos presentes en la respuesta.
+- `date_from > date_to` retorna 422.
+- `/health` y `/health/db` siguen funcionando.
+- No se implementa frontend, login ni auditoria.
+- No se calculan ni guardan desviaciones.
+- Archivos en UTF-8 sin mojibake.
+
 ## Tarea T-012
 
 - Convertir la ruta `/planned-expenses` de placeholder a pantalla funcional con matriz mensual editable.

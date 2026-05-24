@@ -316,6 +316,66 @@ Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/cost-centers/6" 
 Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/cost-centers/6"
 ```
 
+## API de gastos reales
+
+Base path: `http://127.0.0.1:8000/api/actual-expenses`
+
+| Método | Ruta | Descripción | Respuestas |
+|--------|------|-------------|------------|
+| GET | `/api/actual-expenses` | Lista gastos reales | 200 |
+| GET | `/api/actual-expenses/{id}` | Obtiene registro por ID | 200 / 404 |
+| POST | `/api/actual-expenses` | Crea gasto real | 201 / 404 / 422 |
+| PUT | `/api/actual-expenses/{id}` | Actualiza completo | 200 / 404 / 422 |
+| PATCH | `/api/actual-expenses/{id}` | Actualización parcial | 200 / 404 / 422 |
+| DELETE | `/api/actual-expenses/{id}` | Eliminación física | 200 / 404 |
+
+Reglas de negocio:
+- `amount` usa `Decimal`, nunca float. Debe ser `> 0`.
+- `year` y `month` se derivan automáticamente desde `expense_date` (componentes del objeto `date`).
+- Se permiten múltiples registros reales para el mismo periodo, centro de costo y concepto (gastos transaccionales).
+- `expense_concept_id` debe pertenecer al `cost_center_id` indicado.
+- DELETE elimina físicamente el registro en el MVP. En fases posteriores con auditoría se evaluará baja lógica o historial.
+- La desviación **no se calcula ni se guarda** en esta tabla; se calculará desde gastos planificados y reales.
+
+Query params disponibles en GET lista: `skip`, `limit` (máx 200), `year`, `month`, `cost_center_id`, `expense_concept_id`, `date_from`, `date_to`, `supplier`, `document_number`, `search`.
+`date_from` no puede ser mayor que `date_to` (retorna 422).
+`search` busca en `supplier`, `document_number`, `description` y `notes`.
+
+La respuesta incluye campos enriquecidos: `cost_center_code`, `cost_center_name`, `expense_concept_code`, `expense_concept_name`.
+
+### Ejemplos de prueba con PowerShell
+
+```powershell
+# Crear
+$body = @{
+    expense_date = "2026-05-23"
+    cost_center_id = 2
+    expense_concept_id = 3
+    amount = "1500.50"
+    supplier = "Proveedor de prueba"
+    document_number = "F001-000123"
+    description = "Gasto real de prueba"
+    notes = "Registro temporal"
+} | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/actual-expenses" -ContentType "application/json" -Body $body
+
+# Listar con filtros
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/actual-expenses?year=2026&month=5&cost_center_id=2"
+
+# Filtrar por rango de fechas
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/actual-expenses?date_from=2026-05-01&date_to=2026-05-31"
+
+# Buscar por texto
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/actual-expenses?search=proveedor"
+
+# PATCH parcial (solo amount y notes)
+$body = @{ amount = "1750.75"; notes = "Gasto actualizado" } | ConvertTo-Json
+Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/actual-expenses/1" -ContentType "application/json" -Body $body
+
+# DELETE (eliminacion fisica)
+Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/actual-expenses/1"
+```
+
 ## Frontend: Gastos planificados
 
 Pantalla de registro y edición mensual de presupuesto por centro de costo y concepto.
