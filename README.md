@@ -316,6 +316,27 @@ Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/cost-centers/6" 
 Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/cost-centers/6"
 ```
 
+## Frontend: Gastos planificados
+
+Pantalla de registro y edición mensual de presupuesto por centro de costo y concepto.
+
+**Requisito:** el backend debe estar activo en `http://127.0.0.1:8000`.
+
+Ruta: `http://127.0.0.1:5173/planned-expenses`
+
+Comportamiento:
+- Carga centros de costo activos y auto-selecciona el primero.
+- Permite seleccionar año y centro de costo desde la barra de herramientas.
+- Muestra una matriz mensual: filas = conceptos del centro, columnas = enero a diciembre.
+- Cada celda permite editar el monto planificado para ese concepto y mes.
+- Al guardar: usa POST si no existe registro, PATCH si ya existe.
+- No implementa DELETE visual, desviación ni gastos reales en esta versión.
+- Celdas vacías nuevas se ignoran al guardar.
+- Si una celda ya tiene registro existente, se debe ingresar 0 para presupuesto cero; no se permite dejarla vacía.
+- Acepta entrada decimal con punto o coma (`9800`, `9800.50`, `9800,50`).
+- No permite montos negativos.
+- Muestra totales mensuales y total anual (solo visuales, no persistidos).
+
 ## Criterios base del proyecto
 
 - Todo texto del sistema y la documentación se mantiene en español.

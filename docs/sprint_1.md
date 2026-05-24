@@ -288,6 +288,44 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se modifica el frontend.
 - No hay mojibake; archivos en UTF-8.
 
+## Tarea T-012
+
+- Convertir la ruta `/planned-expenses` de placeholder a pantalla funcional con matriz mensual editable.
+- Consumir centros de costo activos (`GET /api/cost-centers?is_active=true`).
+- Consumir conceptos activos por centro (`GET /api/cost-centers/{id}/expense-concepts?is_active=true`).
+- Consumir gastos planificados por año y centro (`GET /api/planned-expenses?year=&cost_center_id=`).
+- Matriz: filas = conceptos del centro, columnas = enero a diciembre, más columna de total anual.
+- Fila de totales mensuales al pie de la matriz.
+- Edición de montos por celda con validación de entrada (sin negativos, acepta coma decimal).
+- Guardar con POST para registros nuevos y PATCH para registros existentes.
+- No implementa DELETE visual, desviación, gastos reales, login ni auditoría.
+- Creados: `frontend/src/types/plannedExpense.ts`, `frontend/src/services/plannedExpensesService.ts`,
+  `frontend/src/utils/money.ts`, `frontend/src/utils/date.ts`,
+  `frontend/src/components/planned-expenses/PlannedExpensesMatrix.tsx`,
+  `frontend/src/components/planned-expenses/PlannedExpensesToolbar.tsx`,
+  `frontend/src/components/planned-expenses/PlannedExpenseCell.tsx`.
+- Sin cambios en backend, migraciones ni seeds.
+
+## Criterios de aceptación T-012
+
+- `/planned-expenses` deja de ser placeholder y muestra pantalla funcional.
+- Carga centros de costo activos desde el backend.
+- Permite seleccionar año y centro de costo.
+- Carga conceptos activos y gastos planificados del centro y año seleccionados.
+- Muestra matriz mensual con conceptos como filas y meses como columnas.
+- Permite editar montos por celda.
+- Guarda nuevos montos con POST y actualiza existentes con PATCH.
+- No permite montos negativos; permite monto 0.
+- Normaliza coma decimal a punto antes de enviar al backend.
+- Celda existente no puede quedar vacía (muestra mensaje para usar 0).
+- Muestra totales mensuales y total anual de forma visual.
+- Estados de carga (skeleton), error (con botón Reintentar) y vacío manejados.
+- No implementa DELETE visual.
+- No modifica backend ni migraciones.
+- No calcula ni guarda desviación.
+- `npm run build` funciona sin errores.
+- No hay mojibake. Archivos en UTF-8.
+
 ## Criterios de aceptación T-007
 
 - Existe `scripts/seed_initial_catalogs.py` que usa ORM y `SessionLocal`.
