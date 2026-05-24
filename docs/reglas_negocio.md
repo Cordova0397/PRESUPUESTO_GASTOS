@@ -47,6 +47,17 @@ El estado no se almacena en base de datos; se calcula en tiempo de consulta.
 - No usar `FLOAT` ni `DOUBLE` para dinero.
 - El MVP trabaja en soles de Perú como moneda funcional.
 
+## Análisis por centro y periodo
+
+El endpoint `GET /api/reports/analysis` calcula un resumen por `(year, month, cost_center_id)`.
+
+- Los datos se derivan de los registros de `planned_expenses` y `actual_expenses`.
+- `planned_amount` y `actual_amount` son **sumas consolidadas** de todos los conceptos del centro en el periodo.
+- `deviation_amount = actual_amount - planned_amount` (calculado sobre los totales del grupo).
+- `deviation_percentage` se calcula sobre los totales consolidados del grupo, **no como promedio de porcentajes por concepto**.
+- Los estados (`SIN PRESUPUESTO`, `SOBRECOSTO`, `AHORRO`, `EN PRESUPUESTO`) se determinan con las mismas reglas que la desviación por concepto, pero aplicadas al total del grupo.
+- El análisis no se almacena en base de datos; se calcula en tiempo de consulta.
+
 ## Zona horaria del negocio
 
 - La zona horaria oficial del negocio es `America/Lima`.

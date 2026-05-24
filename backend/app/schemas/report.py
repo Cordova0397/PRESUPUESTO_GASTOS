@@ -6,6 +6,35 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 
+class ExpenseAnalysisRead(BaseModel):
+    """Resumen de desviacion agrupado por año, mes y centro de costo.
+
+    Agrega planned_amount y actual_amount de todos los conceptos del centro
+    para el periodo (year, month). Los calculos se realizan sobre los totales
+    consolidados del grupo, no como promedio de porcentajes por concepto.
+
+    Formulas aplicadas sobre totales del grupo:
+        deviation_amount     = actual_amount - planned_amount
+        deviation_percentage = deviation_amount / planned_amount  (ratio 4 dec.)
+
+    Si planned_amount = 0 y actual_amount > 0: deviation_percentage = None
+    y status = "SIN PRESUPUESTO".
+
+    No se almacena en base de datos; se calcula en tiempo de consulta.
+    """
+
+    year: int
+    month: int
+    cost_center_id: int
+    cost_center_code: str | None
+    cost_center_name: str | None
+    planned_amount: Decimal
+    actual_amount: Decimal
+    deviation_amount: Decimal
+    deviation_percentage: Decimal | None
+    status: str
+
+
 class ExpenseVarianceRead(BaseModel):
     """Desviacion monetaria por periodo, centro y concepto.
 

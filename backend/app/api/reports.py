@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.report import (
     ActualExpenseConsolidatedRead,
+    ExpenseAnalysisRead,
     ExpenseVarianceRead,
     PlannedExpenseConsolidatedRead,
 )
@@ -96,4 +97,32 @@ def list_expense_variance(
         month=month,
         cost_center_id=cost_center_id,
         expense_concept_id=expense_concept_id,
+    )
+
+
+@router.get("/analysis", response_model=list[ExpenseAnalysisRead])
+def list_expense_analysis(
+    db: DbDep,
+    year: int | None = Query(default=None, ge=2000, le=2099),
+    month: int | None = Query(default=None, ge=1, le=12),
+    cost_center_id: int | None = Query(default=None, gt=0),
+) -> list[ExpenseAnalysisRead]:
+    """Resume la desviacion por año, mes y centro de costo.
+
+    Agrega planned_amount y actual_amount de todos los conceptos del centro
+    para el periodo. Los calculos de desviacion se realizan sobre los totales
+    consolidados del grupo, no como promedio de porcentajes por concepto.
+
+    Formula aplicada sobre totales del grupo:
+        deviation_amount     = actual_amount - planned_amount
+        deviation_percentage = deviation_amount / planned_amount  (ratio 4 dec.)
+
+    No filtra por expense_concept_id: el nivel de detalle es centro-periodo.
+    No guarda el analisis en base de datos.
+    """
+    return svc.list_expense_analysis(
+        db,
+        year=year,
+        month=month,
+        cost_center_id=cost_center_id,
     )

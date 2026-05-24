@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.repositories import report_repository as repo
 from app.schemas.report import (
     ActualExpenseConsolidatedRead,
+    ExpenseAnalysisRead,
     ExpenseVarianceRead,
     PlannedExpenseConsolidatedRead,
 )
@@ -238,6 +239,93 @@ def list_expense_variance(
                 expense_concept_id=entry["expense_concept_id"],
                 expense_concept_code=entry["expense_concept_code"],
                 expense_concept_name=entry["expense_concept_name"],
+                planned_amount=planned,
+                actual_amount=actual,
+                deviation_amount=deviation,
+                deviation_percentage=deviation_pct,
+                status=status,
+            )
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tipo interno para el acumulador del analisis por centro
+# ---------------------------------------------------------------------------
+_AnalysisKey = tuple  # (year, month, cost_center_id)
+
+
+def list_expense_analysis(
+    db: Session,
+    year: int | None,
+    month: int | None,
+    cost_center_id: int | None,
+) -> list[ExpenseAnalysisRead]:
+    """Resume la desviacion agrupada por año, mes y centro de costo.
+
+    Reutiliza list_expense_variance() para obtener los datos por concepto y
+    los consolida sumando planned_amount y actual_amount por grupo
+    (year, month, cost_center_id).
+
+    Los calculos de deviation_amount, deviation_percentage y status se realizan
+    sobre los totales consolidados del grupo, no como promedio de porcentajes
+    individuales por concepto.
+
+    Filtros soportados:
+    - year, month, cost_center_id.
+    - expense_concept_id no aplica en este nivel de resumen.
+
+    Fuera de alcance:
+    - Detalle por concepto (usar /variance).
+    - Almacenamiento en base de datos.
+    """
+    # Obtener varianza por concepto reutilizando la logica ya validada
+    variance_rows = list_expense_variance(
+        db,
+        year=year,
+        month=month,
+        cost_center_id=cost_center_id,
+        expense_concept_id=None,
+    )
+
+    # Acumulador indexado por (year, month, cost_center_id)
+    analysis: dict[_AnalysisKey, dict] = {}
+
+    for row in variance_rows:
+        key: _AnalysisKey = (row.year, row.month, row.cost_center_id)
+        if key not in analysis:
+            analysis[key] = {
+                "year": row.year,
+                "month": row.month,
+                "cost_center_id": row.cost_center_id,
+                "cost_center_code": row.cost_center_code,
+                "cost_center_name": row.cost_center_name,
+                "planned_amount": _ZERO,
+                "actual_amount": _ZERO,
+            }
+        analysis[key]["planned_amount"] += row.planned_amount
+        analysis[key]["actual_amount"] += row.actual_amount
+
+    # Calcular desviacion, porcentaje y estado sobre totales del grupo
+    result: list[ExpenseAnalysisRead] = []
+    for key in sorted(analysis):
+        entry = analysis[key]
+        planned = entry["planned_amount"]
+        actual = entry["actual_amount"]
+        deviation = actual - planned
+        status = _calculate_variance_status(planned, actual, deviation)
+        deviation_pct: Decimal | None = (
+            None
+            if status == "SIN PRESUPUESTO"
+            else _calculate_deviation_percentage(planned, deviation)
+        )
+        result.append(
+            ExpenseAnalysisRead(
+                year=entry["year"],
+                month=entry["month"],
+                cost_center_id=entry["cost_center_id"],
+                cost_center_code=entry["cost_center_code"],
+                cost_center_name=entry["cost_center_name"],
                 planned_amount=planned,
                 actual_amount=actual,
                 deviation_amount=deviation,
