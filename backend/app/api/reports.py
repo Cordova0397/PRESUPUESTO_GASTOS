@@ -75,16 +75,20 @@ def list_expense_variance(
     cost_center_id: int | None = Query(default=None, gt=0),
     expense_concept_id: int | None = Query(default=None, gt=0),
 ) -> list[ExpenseVarianceRead]:
-    """Calcula la desviacion monetaria por periodo, centro y concepto.
+    """Calcula desviacion monetaria, porcentaje y estado por periodo, centro y concepto.
 
-    Formula: deviation_amount = actual_amount - planned_amount
+    Formula:
+        deviation_amount     = actual_amount - planned_amount
+        deviation_percentage = deviation_amount / planned_amount  (ratio decimal 4 dec.)
 
     Combina planificados y reales aunque no exista contraparte:
-    - Solo planificado: actual_amount = 0.00, deviation negativa (ahorro).
-    - Solo real:        planned_amount = 0.00, deviation positiva (sobrecosto).
-    - Ambos presentes:  deviation = real - planificado.
+    - Solo planificado: actual = 0.00, deviation negativa, status "AHORRO".
+    - Solo real:        planned = 0.00, deviation positiva, deviation_percentage null,
+                        status "SIN PRESUPUESTO".
+    - Ambos presentes:  deviation = real - planificado, status segun signo.
 
-    No incluye porcentaje de ejecucion ni semaforos.
+    Valores de status: "SIN PRESUPUESTO" | "SOBRECOSTO" | "AHORRO" | "EN PRESUPUESTO".
+    No incluye semaforos visuales.
     """
     return svc.list_expense_variance(
         db,

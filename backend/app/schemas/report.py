@@ -9,14 +9,24 @@ from pydantic import BaseModel
 class ExpenseVarianceRead(BaseModel):
     """Desviacion monetaria por periodo, centro y concepto.
 
-    deviation_amount = actual_amount - planned_amount
-    Un valor positivo indica gasto mayor al presupuestado (sobrecosto).
-    Un valor negativo indica gasto menor al presupuestado (ahorro).
+    Formulas:
+        deviation_amount     = actual_amount - planned_amount
+        deviation_percentage = deviation_amount / planned_amount  (ratio decimal, no porcentaje x100)
+
+    Casos de deviation_percentage:
+    - planned_amount > 0:                   ratio con 4 decimales (ej. 0.2000 = 20 %).
+    - planned_amount = 0 y actual = 0:      Decimal("0.0000").
+    - planned_amount = 0 y actual > 0:      None  (sin presupuesto definido).
+
+    Valores de status:
+    - "SIN PRESUPUESTO": planned_amount = 0 y actual_amount > 0.
+    - "SOBRECOSTO":      planned_amount > 0 y deviation_amount > 0.
+    - "AHORRO":          planned_amount > 0 y deviation_amount < 0.
+    - "EN PRESUPUESTO":  deviation_amount = 0 y no aplica SIN PRESUPUESTO.
 
     Si no existe planificado para la combinacion: planned_amount = Decimal("0.00").
     Si no existe real para la combinacion:         actual_amount  = Decimal("0.00").
-    No incluye porcentaje de ejecucion ni semaforos; esos calculos
-    corresponden a tareas posteriores.
+    No se calculan semaforos visuales; esos corresponden a tareas posteriores.
     """
 
     year: int
@@ -30,6 +40,8 @@ class ExpenseVarianceRead(BaseModel):
     planned_amount: Decimal
     actual_amount: Decimal
     deviation_amount: Decimal
+    deviation_percentage: Decimal | None
+    status: str
 
 
 class ActualExpenseConsolidatedRead(BaseModel):

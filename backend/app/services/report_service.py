@@ -3,8 +3,7 @@
 En T-015 se consolidan gastos planificados.
 En T-016 se consolidan gastos reales.
 En T-017 se calcula la desviacion monetaria (real - planificado).
-No se calculan porcentaje ni semaforos; esos calculos corresponden
-a tareas posteriores del sprint.
+En T-018 se calculan el porcentaje de desviacion y el estado.
 """
 from __future__ import annotations
 
@@ -81,6 +80,49 @@ def list_actual_expenses_consolidated(
 # ---------------------------------------------------------------------------
 _VarKey = tuple  # (year, month, cost_center_id, expense_concept_id)
 
+_ZERO = Decimal("0.00")
+_ZERO_PCT = Decimal("0.0000")
+_PCT_PRECISION = Decimal("0.0001")
+
+
+def _calculate_deviation_percentage(
+    planned_amount: Decimal,
+    deviation_amount: Decimal,
+) -> Decimal:
+    """Calcula el ratio de desviacion como Decimal de 4 decimales.
+
+    - Si planned_amount > 0: (deviation_amount / planned_amount) con 4 decimales.
+    - Si planned_amount = 0: Decimal("0.0000").
+
+    No usa float. No maneja el caso SIN PRESUPUESTO (planned=0, actual>0);
+    ese caso lo gestiona el llamador asignando None antes de invocar esta funcion.
+    """
+    if planned_amount > _ZERO:
+        return (deviation_amount / planned_amount).quantize(_PCT_PRECISION)
+    return _ZERO_PCT
+
+
+def _calculate_variance_status(
+    planned_amount: Decimal,
+    actual_amount: Decimal,
+    deviation_amount: Decimal,
+) -> str:
+    """Determina el estado de la desviacion.
+
+    Estados posibles:
+    - "SIN PRESUPUESTO": planned = 0 y actual > 0.
+    - "SOBRECOSTO":      planned > 0 y deviation > 0  (se gasto mas de lo previsto).
+    - "AHORRO":          planned > 0 y deviation < 0  (se gasto menos de lo previsto).
+    - "EN PRESUPUESTO":  deviation = 0 y no aplica SIN PRESUPUESTO.
+    """
+    if planned_amount == _ZERO and actual_amount > _ZERO:
+        return "SIN PRESUPUESTO"
+    if deviation_amount > _ZERO:
+        return "SOBRECOSTO"
+    if deviation_amount < _ZERO:
+        return "AHORRO"
+    return "EN PRESUPUESTO"
+
 
 def list_expense_variance(
     db: Session,
@@ -89,27 +131,26 @@ def list_expense_variance(
     cost_center_id: int | None,
     expense_concept_id: int | None,
 ) -> list[ExpenseVarianceRead]:
-    """Calcula la desviacion monetaria por periodo, centro y concepto.
+    """Calcula desviacion monetaria, porcentaje y estado por periodo, centro y concepto.
 
-    Formula obligatoria:
-        deviation_amount = actual_amount - planned_amount
+    Formulas:
+        deviation_amount     = actual_amount - planned_amount
+        deviation_percentage = deviation_amount / planned_amount  (ratio 4 decimales)
 
-    Casos manejados:
-    - Planificado y real presentes:    deviation = actual - planned
-    - Solo planificado (sin real):     actual = 0.00, deviation = 0.00 - planned
-    - Solo real (sin planificado):     planned = 0.00, deviation = actual - 0.00
+    Casos de deviation_percentage:
+    - planned > 0:               ratio calculado.
+    - planned = 0 y actual = 0:  Decimal("0.0000").
+    - planned = 0 y actual > 0:  None  (estado "SIN PRESUPUESTO").
 
     Implementacion:
     - Reutiliza repo.list_planned_expenses_consolidated() y
       repo.list_actual_expenses_consolidated() para evitar logica duplicada.
     - La fusion se realiza en memoria usando una clave compuesta
       (year, month, cost_center_id, expense_concept_id).
-    - MySQL no soporta FULL OUTER JOIN, por lo que no se usa SQL para la fusion.
+    - MySQL no soporta FULL OUTER JOIN; la fusion se hace en Python.
 
     Fuera de alcance:
-    - Porcentaje de ejecucion.
-    - Estado SIN PRESUPUESTO.
-    - Semaforos de alerta.
+    - Semaforos visuales.
     """
     planned_rows = repo.list_planned_expenses_consolidated(
         db,
@@ -174,12 +215,19 @@ def list_expense_variance(
                 "actual_amount": Decimal(str(row["actual_amount"])),
             }
 
-    # 3. Calcular desviacion y construir resultado ordenado
+    # 3. Calcular desviacion, porcentaje y estado; construir resultado ordenado
     result: list[ExpenseVarianceRead] = []
     for key in sorted(variance):
         entry = variance[key]
         planned = entry["planned_amount"]
         actual = entry["actual_amount"]
+        deviation = actual - planned
+        status = _calculate_variance_status(planned, actual, deviation)
+        deviation_pct: Decimal | None = (
+            None
+            if status == "SIN PRESUPUESTO"
+            else _calculate_deviation_percentage(planned, deviation)
+        )
         result.append(
             ExpenseVarianceRead(
                 year=entry["year"],
@@ -192,7 +240,9 @@ def list_expense_variance(
                 expense_concept_name=entry["expense_concept_name"],
                 planned_amount=planned,
                 actual_amount=actual,
-                deviation_amount=actual - planned,
+                deviation_amount=deviation,
+                deviation_percentage=deviation_pct,
+                status=status,
             )
         )
     return result

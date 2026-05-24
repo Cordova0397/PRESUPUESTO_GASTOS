@@ -12,9 +12,26 @@
 
 ## Porcentaje de desviación
 
-- Si `planificado > 0`: `(real - planificado) / planificado`.
-- Si `planificado = 0` y `real = 0`: porcentaje = `0`.
-- Si `planificado = 0` y `real > 0`: estado = `SIN PRESUPUESTO`.
+El porcentaje se expresa como **ratio decimal** (no como porcentaje multiplicado por 100).
+
+| Condición | `deviation_percentage` |
+|---|---|
+| `planificado > 0` | `(real - planificado) / planificado` con 4 decimales |
+| `planificado = 0` y `real = 0` | `0.0000` |
+| `planificado = 0` y `real > 0` | `null` — sin presupuesto definido |
+
+Ejemplo: `planned = 1000, actual = 1200` → `deviation_percentage = 0.2000` (equivale a 20 %).
+
+## Estados de desviación
+
+| Estado | Condición |
+|---|---|
+| `SIN PRESUPUESTO` | `planned_amount = 0` y `actual_amount > 0` |
+| `SOBRECOSTO` | `planned_amount > 0` y `deviation_amount > 0` |
+| `AHORRO` | `planned_amount > 0` y `deviation_amount < 0` |
+| `EN PRESUPUESTO` | `deviation_amount = 0` y no aplica `SIN PRESUPUESTO` |
+
+El estado no se almacena en base de datos; se calcula en tiempo de consulta.
 
 ## Origen de datos
 
