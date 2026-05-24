@@ -97,6 +97,44 @@ Los porcentajes **no son promedios** de porcentajes por centro o concepto; se ca
 
 El KPI no se almacena en base de datos; se calcula en tiempo de consulta.
 
+## Validaciones MVP
+
+### Rangos de dominio
+
+| Campo | Regla | Origen |
+|---|---|---|
+| Año | 2000 – 2099 | `validation.py` / `budgetValidation.ts` |
+| Mes | 1 – 12 | `validation.py` / `budgetValidation.ts` |
+| ID centro de costo | entero > 0 | `PositiveId` / `positiveIdStringSchema` |
+| ID concepto de gasto | entero > 0 | `PositiveId` / `positiveIdStringSchema` |
+
+### Reglas de montos
+
+| Contexto | Regla | Tipo en backend | Tipo en frontend |
+|---|---|---|---|
+| Planificado | `>= 0`, máximo 2 decimales | `DECIMAL(14,2)`, `ge=Decimal("0")` | string normalizado |
+| Real | `> 0`, máximo 2 decimales | `DECIMAL(14,2)`, `gt=Decimal("0")` | string normalizado |
+
+- Los montos **no se calculan con `float`** en ninguna capa.
+- Frontend acepta coma o punto como separador decimal en el input.
+- Frontend normaliza a string con punto decimal y dos decimales (`"X.YY"`) antes de enviar.
+- Una celda planificada vacía (sin registro existente) se omite al guardar, no es error.
+- Una celda planificada vacía (con registro existente en BD) es error; debe ingresar al menos `0`.
+
+### Validación de pertenencia concepto-centro
+
+El concepto de gasto debe pertenecer al centro de costo seleccionado.
+Esta validación vive en los **servicios backend** (`planned_expense_service`, `actual_expense_service`) y no se puede eludir desde frontend.
+El endpoint retorna HTTP 422 si el concepto no pertenece al centro.
+
+### Arquitectura de validación
+
+- **Frontend**: Zod (`budgetValidation.ts`) como primera línea de UX.
+  Impide enviar payloads inválidos al backend.
+- **Backend**: Pydantic v2 (`validation.py`, schemas individuales) como autoridad final.
+  Rechaza cualquier petición inválida con HTTP 422 aunque el frontend haya fallado.
+- Los query params de `/api/planned-expenses` y `/api/actual-expenses` incluyen `ge/le/gt` para año, mes e IDs.
+
 ## Zona horaria del negocio
 
 - La zona horaria oficial del negocio es `America/Lima`.

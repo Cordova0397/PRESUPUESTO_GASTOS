@@ -6,12 +6,14 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.validation import ActualMoneyAmount, PositiveId
+
 
 class ActualExpenseCreate(BaseModel):
     expense_date: date
-    cost_center_id: int = Field(..., gt=0)
-    expense_concept_id: int = Field(..., gt=0)
-    amount: Decimal = Field(..., gt=Decimal("0"), decimal_places=2, max_digits=14)
+    cost_center_id: PositiveId
+    expense_concept_id: PositiveId
+    amount: ActualMoneyAmount
     supplier: str | None = Field(default=None, max_length=150)
     document_number: str | None = Field(default=None, max_length=80)
     description: str | None = None
@@ -20,9 +22,9 @@ class ActualExpenseCreate(BaseModel):
 
 class ActualExpenseUpdate(BaseModel):
     expense_date: date
-    cost_center_id: int = Field(..., gt=0)
-    expense_concept_id: int = Field(..., gt=0)
-    amount: Decimal = Field(..., gt=Decimal("0"), decimal_places=2, max_digits=14)
+    cost_center_id: PositiveId
+    expense_concept_id: PositiveId
+    amount: ActualMoneyAmount
     supplier: str | None = Field(default=None, max_length=150)
     document_number: str | None = Field(default=None, max_length=80)
     description: str | None = None
@@ -31,9 +33,9 @@ class ActualExpenseUpdate(BaseModel):
 
 class ActualExpensePatch(BaseModel):
     expense_date: date | None = None
-    cost_center_id: int | None = Field(default=None, gt=0)
-    expense_concept_id: int | None = Field(default=None, gt=0)
-    amount: Decimal | None = Field(default=None, gt=Decimal("0"), decimal_places=2, max_digits=14)
+    cost_center_id: PositiveId | None = None
+    expense_concept_id: PositiveId | None = None
+    amount: ActualMoneyAmount | None = None
     supplier: str | None = Field(default=None, max_length=150)
     document_number: str | None = Field(default=None, max_length=80)
     description: str | None = None

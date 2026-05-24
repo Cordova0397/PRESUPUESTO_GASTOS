@@ -15,7 +15,10 @@ import type { CostCenter } from "../types/costCenter";
 import type { ExpenseConcept } from "../types/expenseConcept";
 import type { PlannedExpense } from "../types/plannedExpense";
 import { getCurrentYearInLima } from "../utils/date";
-import { isValidMoneyInput, normalizeMoneyInput } from "../utils/money";
+import {
+  normalizePlannedCellValue,
+  validatePlannedCellValue,
+} from "../validations/budgetValidation";
 
 type CellKey = `${number}-${number}`;
 
@@ -135,10 +138,7 @@ export function PlannedExpensesPage() {
     const existingRecord = records.find(
       (r) => r.expense_concept_id === conceptId && r.month === month,
     );
-    const isEmpty = value.trim() === "";
-    if (existingRecord && isEmpty) return true;
-    if (!isEmpty && !isValidMoneyInput(value)) return true;
-    return false;
+    return !validatePlannedCellValue(value, existingRecord !== undefined);
   });
 
   async function handleSave() {
@@ -160,7 +160,7 @@ export function PlannedExpensesPage() {
       const isEmpty = rawValue.trim() === "";
 
       if (existingRecord) {
-        const normalized = normalizeMoneyInput(rawValue);
+        const normalized = normalizePlannedCellValue(rawValue);
         if (normalized !== null) {
           tasks.push(patchPlannedExpense(existingRecord.id, { amount: normalized }));
         }
@@ -169,7 +169,7 @@ export function PlannedExpensesPage() {
           skipped++;
           continue;
         }
-        const normalized = normalizeMoneyInput(rawValue);
+        const normalized = normalizePlannedCellValue(rawValue);
         if (normalized !== null) {
           tasks.push(
             createPlannedExpense({

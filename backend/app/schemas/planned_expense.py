@@ -2,35 +2,41 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
+
+from app.schemas.validation import (
+    BudgetMonth,
+    BudgetYear,
+    PlannedMoneyAmount,
+    PositiveId,
+)
 
 
 class PlannedExpenseCreate(BaseModel):
-    year: int = Field(..., ge=2000, le=2099)
-    month: int = Field(..., ge=1, le=12)
-    cost_center_id: int = Field(..., gt=0)
-    expense_concept_id: int = Field(..., gt=0)
-    amount: Decimal = Field(..., ge=Decimal("0"), decimal_places=2, max_digits=14)
+    year: BudgetYear
+    month: BudgetMonth
+    cost_center_id: PositiveId
+    expense_concept_id: PositiveId
+    amount: PlannedMoneyAmount
     notes: str | None = None
 
 
 class PlannedExpenseUpdate(BaseModel):
-    year: int = Field(..., ge=2000, le=2099)
-    month: int = Field(..., ge=1, le=12)
-    cost_center_id: int = Field(..., gt=0)
-    expense_concept_id: int = Field(..., gt=0)
-    amount: Decimal = Field(..., ge=Decimal("0"), decimal_places=2, max_digits=14)
+    year: BudgetYear
+    month: BudgetMonth
+    cost_center_id: PositiveId
+    expense_concept_id: PositiveId
+    amount: PlannedMoneyAmount
     notes: str | None = None
 
 
 class PlannedExpensePatch(BaseModel):
-    year: int | None = Field(default=None, ge=2000, le=2099)
-    month: int | None = Field(default=None, ge=1, le=12)
-    cost_center_id: int | None = Field(default=None, gt=0)
-    expense_concept_id: int | None = Field(default=None, gt=0)
-    amount: Decimal | None = Field(default=None, ge=Decimal("0"), decimal_places=2, max_digits=14)
+    year: BudgetYear | None = None
+    month: BudgetMonth | None = None
+    cost_center_id: PositiveId | None = None
+    expense_concept_id: PositiveId | None = None
+    amount: PlannedMoneyAmount | None = None
     notes: str | None = None
 
 
@@ -42,7 +48,7 @@ class PlannedExpenseRead(BaseModel):
     month: int
     cost_center_id: int
     expense_concept_id: int
-    amount: Decimal
+    amount: PlannedMoneyAmount
     notes: str | None
     created_at: datetime
     updated_at: datetime

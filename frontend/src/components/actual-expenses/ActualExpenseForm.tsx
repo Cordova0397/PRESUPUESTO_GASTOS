@@ -5,7 +5,7 @@ import type { ActualExpense, ActualExpenseCreatePayload } from "../../types/actu
 import type { CostCenter } from "../../types/costCenter";
 import type { ExpenseConcept } from "../../types/expenseConcept";
 import { getTodayDateInLima } from "../../utils/date";
-import { isValidPositiveMoneyInput, normalizeMoneyInput } from "../../utils/money";
+import { actualExpenseFormSchema } from "../../validations/budgetValidation";
 
 type Props = {
   costCenters: CostCenter[];
@@ -127,36 +127,21 @@ export function ActualExpenseForm({
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
-  function validate(): boolean {
-    const e: FormErrors = {};
-    if (!form.expense_date) e.expense_date = "La fecha es requerida.";
-    if (!form.cost_center_id) e.cost_center_id = "Selecciona un centro de costo.";
-    if (!form.expense_concept_id) e.expense_concept_id = "Selecciona un concepto de gasto.";
-    if (!form.amount.trim()) {
-      e.amount = "El monto es requerido.";
-    } else if (!isValidPositiveMoneyInput(form.amount)) {
-      e.amount = "Ingresa un monto válido mayor a 0. No se permiten montos negativos ni cero.";
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
   function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
-    if (!validate()) return;
-    const normalized = normalizeMoneyInput(form.amount);
-    if (!normalized) return;
-    const payload: ActualExpenseCreatePayload = {
-      expense_date: form.expense_date,
-      cost_center_id: Number(form.cost_center_id),
-      expense_concept_id: Number(form.expense_concept_id),
-      amount: normalized,
-      supplier: form.supplier.trim() || null,
-      document_number: form.document_number.trim() || null,
-      description: form.description.trim() || null,
-      notes: form.notes.trim() || null,
-    };
-    onSubmit(payload);
+    const result = actualExpenseFormSchema.safeParse(form);
+    if (!result.success) {
+      const e: FormErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof FormState | undefined;
+        if (field && !e[field]) {
+          e[field] = issue.message;
+        }
+      }
+      setErrors(e);
+      return;
+    }
+    onSubmit(result.data as ActualExpenseCreatePayload);
   }
 
   const isEditing = editingRecord !== null;
