@@ -47,6 +47,19 @@ El estado no se almacena en base de datos; se calcula en tiempo de consulta.
 - No usar `FLOAT` ni `DOUBLE` para dinero.
 - El MVP trabaja en soles de Perú como moneda funcional.
 
+## Semáforos visuales del MVP
+
+Los semáforos son presentación frontend; no se almacenan en base de datos y no reemplazan las reglas financieras del backend. Se derivan de `status` y `deviation_percentage` calculados por backend.
+
+| Semáforo | Condición |
+|---|---|
+| `SIN PRESUPUESTO` | `status = "SIN PRESUPUESTO"` |
+| `CRÍTICO` | `status = "SOBRECOSTO"` y `deviation_percentage >= 0.1000` |
+| `ALERTA` | `status = "SOBRECOSTO"` y `0 < deviation_percentage < 0.1000` |
+| `OK` | `status = "AHORRO"` o `status = "EN PRESUPUESTO"` |
+
+El umbral del 10 % (`0.1000` en ratio decimal) es el inicial del MVP y puede ajustarse sin modificar backend.
+
 ## Análisis por centro y periodo
 
 El endpoint `GET /api/reports/analysis` calcula un resumen por `(year, month, cost_center_id)`.

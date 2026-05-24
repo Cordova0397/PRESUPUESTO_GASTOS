@@ -1,5 +1,7 @@
+import { SemaphoreBadge } from "../reports/SemaphoreBadge";
 import type { ExpenseVariance } from "../../types/report";
 import { formatMoneyForDisplay } from "../../utils/money";
+import { getTrafficLightStatus } from "../../utils/semaphore";
 
 type Props = {
   records: ExpenseVariance[];
@@ -82,7 +84,7 @@ function DeviationAmount({ value }: { value: string }) {
 function SkeletonRow() {
   return (
     <tr className="border-t border-slate-100">
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 9 }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 animate-pulse rounded bg-slate-100" />
         </td>
@@ -105,6 +107,7 @@ export function VarianceTable({ records, isLoading }: Props) {
             <th className="px-4 py-3 text-right whitespace-nowrap">Desviación</th>
             <th className="px-4 py-3 text-right whitespace-nowrap">% Desviación</th>
             <th className="px-4 py-3 text-center">Estado</th>
+            <th className="px-4 py-3 text-center whitespace-nowrap">Semáforo</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -113,14 +116,19 @@ export function VarianceTable({ records, isLoading }: Props) {
           ) : records.length === 0 ? (
             <tr>
               <td
-                colSpan={8}
+                colSpan={9}
                 className="py-12 text-center text-sm text-slate-400"
               >
                 No hay desviaciones con los filtros actuales.
               </td>
             </tr>
           ) : (
-            records.map((record, idx) => (
+            records.map((record, idx) => {
+              const trafficLight = getTrafficLightStatus({
+                status: record.status,
+                deviationPercentage: record.deviation_percentage,
+              });
+              return (
               <tr
                 key={`${record.year}-${record.month}-${record.cost_center_id}-${record.expense_concept_id}-${idx}`}
                 className="transition-colors hover:bg-slate-50/60"
@@ -180,8 +188,14 @@ export function VarianceTable({ records, isLoading }: Props) {
                 <td className="px-4 py-3 text-center">
                   <StatusBadge status={record.status} />
                 </td>
+
+                {/* Semáforo */}
+                <td className="px-4 py-3 text-center">
+                  <SemaphoreBadge value={trafficLight} />
+                </td>
               </tr>
-            ))
+              );
+            })
           )}
         </tbody>
       </table>
