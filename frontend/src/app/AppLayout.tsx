@@ -48,6 +48,10 @@ export function AppLayout() {
     navigationItems.find((item) => location.pathname.startsWith(item.to)) ??
     navigationItems[0];
 
+  const isSpreadsheetPage =
+    location.pathname.startsWith("/planned-expenses") ||
+    location.pathname.startsWith("/actual-expenses");
+
   return (
     <div className="relative min-h-screen bg-slate-950">
       <div className="pointer-events-none absolute inset-0 bg-dashboard-glow" />
@@ -56,7 +60,12 @@ export function AppLayout() {
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <Topbar currentItem={currentItem} items={navigationItems} />
           <main className="flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8">
-            <div className="mx-auto w-full max-w-7xl">
+            <div
+              className={[
+                "mx-auto w-full",
+                isSpreadsheetPage ? "max-w-[1500px]" : "max-w-7xl",
+              ].join(" ")}
+            >
               <Outlet />
             </div>
           </main>
