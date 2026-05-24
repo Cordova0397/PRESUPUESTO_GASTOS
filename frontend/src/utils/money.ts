@@ -15,6 +15,18 @@ export function isValidMoneyInput(value: string): boolean {
   return !isNaN(num) && num >= 0;
 }
 
+/**
+ * Valida entrada de monto para gastos reales: amount > 0.
+ * Acepta coma decimal. Cadena vacía es inválida (campo requerido en reales).
+ */
+export function isValidPositiveMoneyInput(value: string): boolean {
+  if (value.trim() === "") return false;
+  const normalized = value.trim().replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return false;
+  const num = parseFloat(normalized);
+  return !isNaN(num) && num > 0;
+}
+
 export function formatMoneyForDisplay(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0.00";

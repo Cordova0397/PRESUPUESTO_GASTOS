@@ -376,6 +376,26 @@ Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/actual-expenses/
 Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/actual-expenses/1"
 ```
 
+## Frontend: Gastos reales
+
+Pantalla transaccional para registrar, listar, editar y eliminar gastos ejecutados.
+
+**Requisito:** el backend debe estar activo en `http://127.0.0.1:8000`.
+
+Ruta: `http://127.0.0.1:5173/actual-expenses`
+
+Comportamiento:
+- Carga centros de costo activos y conceptos dependientes del centro seleccionado.
+- Formulario de registro con fecha, centro, concepto, monto, proveedor, documento, descripción y observaciones.
+- Fecha por defecto: fecha actual en zona horaria `America/Lima`.
+- Usa POST para crear y PUT para actualizar.
+- Usa DELETE para eliminar (con confirmación).
+- Filtros por año, mes, centro, concepto y búsqueda de texto libre.
+- Búsqueda en proveedor, documento, descripción y observaciones.
+- Paginación automática al consumir la API (múltiples páginas de 200 registros).
+- Muestra total visual y cantidad de registros. Los totales son solo visuales, no persistidos.
+- No calcula desviación en esta versión.
+
 ## Frontend: Gastos planificados
 
 Pantalla de registro y edición mensual de presupuesto por centro de costo y concepto.

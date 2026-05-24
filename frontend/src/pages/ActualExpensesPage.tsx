@@ -1,68 +1,263 @@
-import { PageHeader } from "../components/layout/PageHeader";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const actualColumns = [
-  "Fecha",
-  "Centro de costo",
-  "Categoría",
-  "Descripción",
-  "Importe"
-];
+import { ActualExpenseForm } from "../components/actual-expenses/ActualExpenseForm";
+import { ActualExpensesFilters } from "../components/actual-expenses/ActualExpensesFilters";
+import { ActualExpensesSummary } from "../components/actual-expenses/ActualExpensesSummary";
+import { ActualExpensesTable } from "../components/actual-expenses/ActualExpensesTable";
+import { PageHeader } from "../components/layout/PageHeader";
+import { getActiveCostCenters } from "../services/catalogsService";
+import {
+  createActualExpense,
+  deleteActualExpense,
+  getActualExpenses,
+  updateActualExpense,
+} from "../services/actualExpensesService";
+import type { ActualExpense, ActualExpenseCreatePayload, ActualExpensesFilters as FiltersType } from "../types/actualExpense";
+import type { CostCenter } from "../types/costCenter";
+import { getCurrentYearInLima } from "../utils/date";
+
+type Msg = { type: "ok" | "error"; text: string };
 
 export function ActualExpensesPage() {
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [ccLoading, setCcLoading] = useState(true);
+  const [ccError, setCcError] = useState<string | null>(null);
+
+  const [records, setRecords] = useState<ActualExpense[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordsError, setRecordsError] = useState<string | null>(null);
+
+  const [editingRecord, setEditingRecord] = useState<ActualExpense | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<Msg | null>(null);
+
+  const [activeFilters, setActiveFilters] = useState<FiltersType>({
+    year: getCurrentYearInLima(),
+  });
+
+  const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadIdRef = useRef(0);
+
+  function showMessage(type: "ok" | "error", text: string) {
+    if (msgTimer.current) clearTimeout(msgTimer.current);
+    setMessage({ type, text });
+    msgTimer.current = setTimeout(() => setMessage(null), 6000);
+  }
+
+  // Cargar centros de costo
+  useEffect(() => {
+    let cancelled = false;
+    setCcLoading(true);
+    setCcError(null);
+    getActiveCostCenters()
+      .then((data) => {
+        if (!cancelled) setCostCenters(data);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setCcError(err instanceof Error ? err.message : "Error al cargar centros de costo.");
+      })
+      .finally(() => {
+        if (!cancelled) setCcLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Cargar registros de gastos reales
+  const loadRecords = useCallback(async () => {
+    const id = ++loadIdRef.current;
+    setRecordsLoading(true);
+    setRecordsError(null);
+    try {
+      const data = await getActualExpenses(activeFilters);
+      if (loadIdRef.current === id) setRecords(data);
+    } catch (err) {
+      if (loadIdRef.current === id)
+        setRecordsError(
+          err instanceof Error ? err.message : "Error al cargar los gastos reales.",
+        );
+    } finally {
+      if (loadIdRef.current === id) setRecordsLoading(false);
+    }
+  }, [activeFilters]);
+
+  useEffect(() => {
+    void loadRecords();
+  }, [loadRecords]);
+
+  // Guardar (POST o PUT)
+  async function handleFormSubmit(payload: ActualExpenseCreatePayload) {
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      if (editingRecord) {
+        await updateActualExpense(editingRecord.id, payload);
+        showMessage("ok", `Gasto #${editingRecord.id} actualizado correctamente.`);
+      } else {
+        await createActualExpense(payload);
+        showMessage("ok", "Gasto registrado correctamente.");
+      }
+      setEditingRecord(null);
+      await loadRecords();
+    } catch (err) {
+      showMessage(
+        "error",
+        err instanceof Error ? err.message : "Error al guardar el gasto.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function handleEdit(record: ActualExpense) {
+    setEditingRecord(record);
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleCancelEdit() {
+    setEditingRecord(null);
+    setMessage(null);
+  }
+
+  async function handleDelete(id: number) {
+    const confirmed = window.confirm(
+      `¿Eliminar el gasto real #${id}? Esta acción no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+    setMessage(null);
+    try {
+      await deleteActualExpense(id);
+      if (editingRecord?.id === id) setEditingRecord(null);
+      showMessage("ok", `Gasto #${id} eliminado correctamente.`);
+      await loadRecords();
+    } catch (err) {
+      showMessage(
+        "error",
+        err instanceof Error ? err.message : `Error al eliminar el gasto #${id}.`,
+      );
+    }
+  }
+
+  function handleFiltersApply(filters: FiltersType) {
+    setActiveFilters(filters);
+    setMessage(null);
+  }
+
+  function handleReload() {
+    void loadRecords();
+    setMessage(null);
+  }
+
+  const formCardTitle = editingRecord
+    ? `Editar gasto #${editingRecord.id}`
+    : "Registrar gasto";
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Gastos reales"
         description="Registro transaccional de gastos ejecutados."
-        badge="Sin integración"
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <article className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Estructura prevista del registro
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Placeholder de tabla para la futura carga de ejecución presupuestal.
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500">
-                <tr>
-                  {actualColumns.map((column) => (
-                    <th key={column} className="px-6 py-4 font-semibold">
-                      {column}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <tr key={index} className="border-t border-slate-100">
-                    {actualColumns.map((column) => (
-                      <td key={column} className="px-6 py-4 text-slate-400">
-                        Próximamente
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
+      {/* Mensaje global de éxito/error */}
+      {message && (
+        <div
+          className={[
+            "rounded-[20px] border px-6 py-4 text-sm font-medium shadow-sm",
+            message.type === "ok"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800",
+          ].join(" ")}
+        >
+          {message.text}
+        </div>
+      )}
 
-        <article className="rounded-[28px] border border-slate-200/80 bg-sand p-6 shadow-panel">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Qué se deja preparado
+      {/* Formulario */}
+      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <h2 className="text-base font-semibold text-slate-950">{formCardTitle}</h2>
+          {editingRecord && (
+            <p className="mt-1 text-sm text-slate-500">
+              Modifica los campos y guarda para actualizar el registro.
+            </p>
+          )}
+        </div>
+
+        <div className="p-6">
+          {ccLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+              ))}
+            </div>
+          ) : ccError ? (
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-red-600">{ccError}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : (
+            <ActualExpenseForm
+              costCenters={costCenters}
+              editingRecord={editingRecord}
+              isSaving={isSaving}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCancelEdit}
+            />
+          )}
+        </div>
+      </section>
+
+      {/* Tabla de registros */}
+      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+        {/* Filtros en la cabecera */}
+        <div className="border-b border-slate-200 px-6 py-5">
+          <h2 className="mb-4 text-base font-semibold text-slate-950">
+            Gastos registrados
           </h2>
-          <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
-            <li>Espacio para filtros por fecha, categoría y centro de costo.</li>
-            <li>Bloque listo para futura conexión con backend y validaciones.</li>
-            <li>No se implementa formulario funcional ni cálculo agregado.</li>
-          </ul>
-        </article>
+          <ActualExpensesFilters
+            costCenters={costCenters}
+            onApply={handleFiltersApply}
+            onReload={handleReload}
+          />
+        </div>
+
+        {/* Error de carga de registros */}
+        {recordsError && !recordsLoading && (
+          <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
+            <p className="text-sm text-red-600">{recordsError}</p>
+            <button
+              type="button"
+              onClick={handleReload}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {/* Resumen */}
+        <div className="border-b border-slate-100">
+          <ActualExpensesSummary records={records} isLoading={recordsLoading} />
+        </div>
+
+        {/* Tabla */}
+        <ActualExpensesTable
+          records={records}
+          isLoading={recordsLoading}
+          editingId={editingRecord?.id ?? null}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </section>
     </div>
   );

@@ -288,6 +288,46 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se modifica el frontend.
 - No hay mojibake; archivos en UTF-8.
 
+## Tarea T-014
+
+- Convertir la ruta `/actual-expenses` de placeholder a pantalla transaccional funcional.
+- Formulario de registro/edicion con campos: fecha, centro, concepto, monto, proveedor, documento, descripcion, observaciones.
+- Validaciones: monto > 0, fecha requerida, centro y concepto requeridos, coma decimal normalizada.
+- Fecha por defecto derivada de `America/Lima` con `Intl.DateTimeFormat`.
+- Creacion con POST, edicion con PUT, eliminacion con DELETE (con confirmacion).
+- Filtros por año, mes, centro de costo, concepto y busqueda de texto.
+- Busqueda en supplier, document_number, description y notes.
+- Paginacion automatica en `getActualExpenses()` para traer todos los registros.
+- Tabla con columnas: Fecha, Centro, Concepto, Monto, Proveedor, Documento, Descripcion, Acciones.
+- Resumen visual de total y cantidad de registros (no persistidos).
+- Sin desviacion, analisis, login ni auditoria.
+- Creados: `frontend/src/types/actualExpense.ts`, `frontend/src/services/actualExpensesService.ts`,
+  `frontend/src/components/actual-expenses/ActualExpenseForm.tsx`,
+  `frontend/src/components/actual-expenses/ActualExpensesTable.tsx`,
+  `frontend/src/components/actual-expenses/ActualExpensesFilters.tsx`,
+  `frontend/src/components/actual-expenses/ActualExpensesSummary.tsx`.
+- Modificados: `frontend/src/utils/date.ts` (agregado `getTodayDateInLima()`),
+  `frontend/src/utils/money.ts` (agregado `isValidPositiveMoneyInput()`).
+
+## Criterios de aceptacion T-014
+
+- `/actual-expenses` deja de ser placeholder y muestra pantalla funcional.
+- Carga centros de costo activos; conceptos dependientes del centro seleccionado.
+- Permite registrar gasto real con todos los campos del modelo.
+- Usa POST para crear y PUT para actualizar.
+- Permite eliminar con confirmacion y usa DELETE.
+- Lista registros del backend con filtros activos.
+- Filtros por año (default: año actual Lima), mes, centro, concepto, busqueda de texto.
+- Monto rechaza 0 y negativos; acepta coma decimal y normaliza a punto.
+- Fecha por defecto correcta para `America/Lima`.
+- Paginacion en `getActualExpenses()`: traer todos los registros aunque superen 200.
+- Resumen visual de total y cantidad (solo visual).
+- Estados de carga (skeleton), error (con boton Reintentar) y vacio manejados.
+- No modifica backend ni migraciones.
+- No calcula ni guarda desviacion.
+- `npm run build` funciona sin errores.
+- No hay mojibake. Archivos en UTF-8.
+
 ## Tarea T-013
 
 - Crear endpoints CRUD de gastos reales usando arquitectura en capas: schemas Pydantic v2, repository, service y router FastAPI.
