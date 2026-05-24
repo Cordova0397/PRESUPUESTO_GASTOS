@@ -153,6 +153,43 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se implementan CRUD, endpoints, schemas Pydantic ni servicios.
 - Crear `docs/catalogos_iniciales.md` con referencia de centros y conceptos.
 
+## Tarea T-009
+
+- Crear endpoints CRUD de conceptos de gasto por centro de costo, usando la misma arquitectura por capas de T-008: schemas Pydantic v2, repository, service y router FastAPI.
+- Base path: `/api/cost-centers/{cost_center_id}/expense-concepts`.
+- Endpoints: GET listado con filtros, GET por ID, POST crear, PUT actualizar completo, PATCH actualizar parcial, DELETE baja lógica.
+- La unicidad de `code` aplica por `(cost_center_id, code)`: el mismo code puede existir en centros distintos pero no dentro del mismo centro.
+- El DELETE no elimina físicamente; establece `is_active = false`.
+- No se permite crear conceptos en centros inactivos (409).
+- No se implementan login, auditoría, CRUD de gastos planificados ni CRUD de gastos reales en esta tarea.
+- No se modifica el frontend.
+
+## Criterios de aceptación T-009
+
+- Existe `backend/app/schemas/expense_concept.py` con schemas Pydantic v2.
+- Existe `backend/app/repositories/expense_concept_repository.py` sin lógica HTTP.
+- Existe `backend/app/services/expense_concept_service.py` con reglas de negocio.
+- Existe `backend/app/api/expense_concepts.py` con el router FastAPI.
+- `backend/app/main.py` registra el router de conceptos de gasto.
+- `GET /api/cost-centers/2/expense-concepts` lista los 8 conceptos de VENTAS del seed.
+- `GET /api/cost-centers/2/expense-concepts?is_active=true` filtra activos.
+- `GET /api/cost-centers/2/expense-concepts?search=facebook` filtra por code o name.
+- `GET /api/cost-centers/{id}/expense-concepts/{concept_id}` retorna el concepto si pertenece al centro.
+- Si el concepto no pertenece al centro indicado, responde 404 con mensaje en español.
+- `POST /api/cost-centers/{id}/expense-concepts` crea un concepto con status 201.
+- `POST` con code duplicado dentro del mismo centro retorna 409.
+- `POST` permite el mismo code en otro centro distinto.
+- `POST` en centro inactivo retorna 409 con mensaje en español.
+- `PUT /api/cost-centers/{id}/expense-concepts/{concept_id}` actualiza el concepto completo.
+- `PATCH /api/cost-centers/{id}/expense-concepts/{concept_id}` permite actualización parcial.
+- `DELETE /api/cost-centers/{id}/expense-concepts/{concept_id}` deja `is_active = false` sin borrar el registro.
+- Centro inexistente en cualquier endpoint retorna 404 con mensaje en español.
+- `/health` y `/health/db` siguen funcionando sin cambios.
+- No se implementa login ni auditoría.
+- No se modifica el frontend.
+- No hay mojibake en nombres como Viáticos, Telefonía, asesoría, etc.
+- Archivos en UTF-8.
+
 ## Tarea T-008
 
 - Crear endpoints CRUD de centros de costo usando arquitectura en capas: schemas Pydantic v2, repository, service y router FastAPI.

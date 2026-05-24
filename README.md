@@ -139,6 +139,60 @@ Resumen del frontend actual:
 - Páginas placeholder en español para dashboard, gastos planificados, gastos reales, desviación y análisis.
 - Sin CRUD, sin consumo de API, sin login y sin auditoría en esta fase.
 
+## API de conceptos de gasto
+
+Los conceptos de gasto se gestionan dentro de un centro de costo. La unicidad de `code` aplica por centro: el mismo código puede existir en centros distintos pero no dentro del mismo.
+
+Base path: `http://127.0.0.1:8000/api/cost-centers/{cost_center_id}/expense-concepts`
+
+| Método | Ruta | Descripción | Respuestas |
+|--------|------|-------------|------------|
+| GET | `/api/cost-centers/{id}/expense-concepts` | Lista conceptos del centro | 200 / 404 |
+| GET | `/api/cost-centers/{id}/expense-concepts/{concept_id}` | Obtiene concepto por ID | 200 / 404 |
+| POST | `/api/cost-centers/{id}/expense-concepts` | Crea concepto en el centro | 201 / 404 / 409 / 422 |
+| PUT | `/api/cost-centers/{id}/expense-concepts/{concept_id}` | Actualiza completo | 200 / 404 / 409 / 422 |
+| PATCH | `/api/cost-centers/{id}/expense-concepts/{concept_id}` | Actualización parcial | 200 / 404 / 409 / 422 |
+| DELETE | `/api/cost-centers/{id}/expense-concepts/{concept_id}` | Baja lógica (`is_active=false`) | 200 / 404 |
+
+El DELETE no elimina físicamente; establece `is_active = false`. No se permite crear conceptos en centros inactivos (409).
+
+Query params disponibles en GET lista:
+
+- `skip` (int, default 0): registros a saltar.
+- `limit` (int, default 100, máx 200): registros a retornar.
+- `is_active` (bool, opcional): filtra por estado activo/inactivo.
+- `search` (str, opcional): filtra por code o name (case-insensitive).
+
+### Ejemplos de prueba con PowerShell
+
+```powershell
+# Listar conceptos de VENTAS (id=2)
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts"
+
+# Solo activos
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts?is_active=true"
+
+# Buscar por nombre o código
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts?search=facebook"
+
+# Crear concepto
+$body = @{
+    code = "TEST_CONCEPTO"
+    name = "Concepto temporal"
+    description = "Registro temporal"
+    sort_order = 999
+    is_active = $true
+} | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts" -ContentType "application/json" -Body $body
+
+# Actualizar parcial (PATCH)
+$body = @{ name = "Concepto actualizado" } | ConvertTo-Json
+Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts/38" -ContentType "application/json" -Body $body
+
+# Baja lógica (DELETE — no borra, deja is_active=false)
+Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/cost-centers/2/expense-concepts/38"
+```
+
 ## API de centros de costo
 
 Base path: `http://127.0.0.1:8000/api/cost-centers`

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.cost_centers import router as cost_centers_router
+from app.api.expense_concepts import router as expense_concepts_router
 from app.core.config import settings
 from app.core.database import check_database_connection
 
@@ -9,6 +10,7 @@ from app.core.database import check_database_connection
 app = FastAPI(title=settings.app_name)
 
 app.include_router(cost_centers_router)
+app.include_router(expense_concepts_router)
 
 app.add_middleware(
     CORSMiddleware,
