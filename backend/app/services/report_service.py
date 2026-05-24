@@ -4,6 +4,7 @@ En T-015 se consolidan gastos planificados.
 En T-016 se consolidan gastos reales.
 En T-017 se calcula la desviacion monetaria (real - planificado).
 En T-018 se calculan el porcentaje de desviacion y el estado.
+En T-024 se calculan los KPIs generales del presupuesto.
 """
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from app.repositories import report_repository as repo
 from app.schemas.report import (
     ActualExpenseConsolidatedRead,
     ExpenseAnalysisRead,
+    ExpenseKpisRead,
     ExpenseVarianceRead,
     PlannedExpenseConsolidatedRead,
 )
@@ -123,6 +125,23 @@ def _calculate_variance_status(
     if deviation_amount < _ZERO:
         return "AHORRO"
     return "EN PRESUPUESTO"
+
+
+def _calculate_execution_percentage(
+    planned_amount: Decimal,
+    actual_amount: Decimal,
+) -> Decimal:
+    """Calcula el porcentaje de ejecucion como ratio Decimal de 4 decimales.
+
+    - Si planned_amount > 0: (actual_amount / planned_amount) con 4 decimales.
+    - Si planned_amount = 0: Decimal("0.0000").
+
+    No usa float. No maneja el caso SIN PRESUPUESTO (planned=0, actual>0);
+    ese caso lo gestiona el llamador asignando None.
+    """
+    if planned_amount > _ZERO:
+        return (actual_amount / planned_amount).quantize(_PCT_PRECISION)
+    return _ZERO_PCT
 
 
 def list_expense_variance(
@@ -334,3 +353,71 @@ def list_expense_analysis(
             )
         )
     return result
+
+
+def get_expense_kpis(
+    db: Session,
+    year: int | None,
+    month: int | None,
+) -> ExpenseKpisRead:
+    """Calcula los KPIs generales del presupuesto para el filtro de año y/o mes.
+
+    Reutiliza list_expense_analysis() para obtener los agregados por centro
+    y los consolida en un unico conjunto de totales globales.
+
+    Reglas de calculo sobre totales globales:
+        deviation_amount_total = actual_amount_total - planned_amount_total
+        deviation_percentage   = deviation_amount_total / planned_amount_total
+        execution_percentage   = actual_amount_total   / planned_amount_total
+
+    Los porcentajes NO son promedios de porcentajes individuales por fila.
+
+    Si planned_amount_total = 0 y actual_amount_total > 0:
+        deviation_percentage = None
+        execution_percentage = None
+        status = "SIN PRESUPUESTO"
+
+    Si planned_amount_total = 0 y actual_amount_total = 0:
+        deviation_percentage = Decimal("0.0000")
+        execution_percentage = Decimal("0.0000")
+        status = "EN PRESUPUESTO"
+
+    No almacena KPIs en base de datos.
+    """
+    analysis_rows = list_expense_analysis(
+        db,
+        year=year,
+        month=month,
+        cost_center_id=None,
+    )
+
+    planned_total = _ZERO
+    actual_total = _ZERO
+    for row in analysis_rows:
+        planned_total += row.planned_amount
+        actual_total += row.actual_amount
+
+    deviation_total = actual_total - planned_total
+    status = _calculate_variance_status(planned_total, actual_total, deviation_total)
+
+    deviation_pct: Decimal | None = (
+        None
+        if status == "SIN PRESUPUESTO"
+        else _calculate_deviation_percentage(planned_total, deviation_total)
+    )
+    execution_pct: Decimal | None = (
+        None
+        if status == "SIN PRESUPUESTO"
+        else _calculate_execution_percentage(planned_total, actual_total)
+    )
+
+    return ExpenseKpisRead(
+        year=year,
+        month=month,
+        planned_amount_total=planned_total,
+        actual_amount_total=actual_total,
+        deviation_amount_total=deviation_total,
+        deviation_percentage=deviation_pct,
+        execution_percentage=execution_pct,
+        status=status,
+    )

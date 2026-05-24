@@ -6,6 +6,41 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 
+class ExpenseKpisRead(BaseModel):
+    """KPIs generales del presupuesto para un filtro de año y/o mes.
+
+    Los totales se calculan sumando planned_amount y actual_amount de todos
+    los centros de costo del filtro. Los porcentajes se calculan sobre los
+    totales globales, no como promedio de porcentajes individuales.
+
+    Formulas:
+        deviation_amount_total  = actual_amount_total - planned_amount_total
+        deviation_percentage    = deviation_amount_total / planned_amount_total
+        execution_percentage    = actual_amount_total   / planned_amount_total
+
+    Si planned_amount_total = 0 y actual_amount_total > 0:
+        deviation_percentage = None
+        execution_percentage = None
+        status = "SIN PRESUPUESTO"
+
+    Si planned_amount_total = 0 y actual_amount_total = 0:
+        deviation_percentage = Decimal("0.0000")
+        execution_percentage = Decimal("0.0000")
+        status = "EN PRESUPUESTO"
+
+    No se almacena en base de datos; se calcula en tiempo de consulta.
+    """
+
+    year: int | None
+    month: int | None
+    planned_amount_total: Decimal
+    actual_amount_total: Decimal
+    deviation_amount_total: Decimal
+    deviation_percentage: Decimal | None
+    execution_percentage: Decimal | None
+    status: str
+
+
 class ExpenseAnalysisRead(BaseModel):
     """Resumen de desviacion agrupado por año, mes y centro de costo.
 

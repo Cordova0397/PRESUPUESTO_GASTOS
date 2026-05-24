@@ -71,6 +71,27 @@ El endpoint `GET /api/reports/analysis` calcula un resumen por `(year, month, co
 - Los estados (`SIN PRESUPUESTO`, `SOBRECOSTO`, `AHORRO`, `EN PRESUPUESTO`) se determinan con las mismas reglas que la desviación por concepto, pero aplicadas al total del grupo.
 - El análisis no se almacena en base de datos; se calcula en tiempo de consulta.
 
+## KPIs generales del presupuesto
+
+El endpoint `GET /api/reports/kpis` devuelve un único objeto con los totales globales del presupuesto para el filtro de año y/o mes indicado.
+
+- `planned_amount_total`: suma de todos los gastos planificados del filtro.
+- `actual_amount_total`: suma de todos los gastos reales del filtro.
+- `deviation_amount_total = actual_amount_total - planned_amount_total`.
+- `deviation_percentage`: ratio decimal con 4 decimales calculado sobre los totales globales.
+- `execution_percentage`: ratio decimal con 4 decimales = `actual_amount_total / planned_amount_total`.
+- `status`: estado calculado con las mismas reglas que `/variance` y `/analysis`.
+
+Los porcentajes **no son promedios** de porcentajes por centro o concepto; se calculan sobre los totales globales consolidados.
+
+| Condición | `deviation_percentage` | `execution_percentage` |
+|---|---|---|
+| `planned_total > 0` | `deviation_total / planned_total` con 4 dec. | `actual_total / planned_total` con 4 dec. |
+| `planned_total = 0` y `actual_total = 0` | `0.0000` | `0.0000` |
+| `planned_total = 0` y `actual_total > 0` | `null` | `null` |
+
+El KPI no se almacena en base de datos; se calcula en tiempo de consulta.
+
 ## Zona horaria del negocio
 
 - La zona horaria oficial del negocio es `America/Lima`.
