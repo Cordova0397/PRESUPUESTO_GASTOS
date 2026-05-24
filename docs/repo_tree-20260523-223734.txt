@@ -1,0 +1,148 @@
+PRESUPUESTO_GASTOS
+├── _bundles
+├── backend
+│   ├── alembic
+│   │   ├── versions
+│   │   │   ├── .gitkeep
+│   │   │   ├── 0001_initial_empty.py
+│   │   │   └── 0002_create_mvp_tables.py
+│   │   ├── .gitkeep
+│   │   ├── env.py
+│   │   └── script.py.mako
+│   ├── app
+│   │   ├── api
+│   │   │   ├── __init__.py
+│   │   │   ├── actual_expenses.py
+│   │   │   ├── cost_centers.py
+│   │   │   ├── expense_concepts.py
+│   │   │   └── planned_expenses.py
+│   │   ├── core
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── database.py
+│   │   │   └── timezone.py
+│   │   ├── models
+│   │   │   ├── __init__.py
+│   │   │   ├── actual_expense.py
+│   │   │   ├── cost_center.py
+│   │   │   ├── expense_concept.py
+│   │   │   ├── mixins.py
+│   │   │   └── planned_expense.py
+│   │   ├── repositories
+│   │   │   ├── __init__.py
+│   │   │   ├── actual_expense_repository.py
+│   │   │   ├── cost_center_repository.py
+│   │   │   ├── expense_concept_repository.py
+│   │   │   └── planned_expense_repository.py
+│   │   ├── schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── actual_expense.py
+│   │   │   ├── cost_center.py
+│   │   │   ├── expense_concept.py
+│   │   │   └── planned_expense.py
+│   │   ├── services
+│   │   │   ├── __init__.py
+│   │   │   ├── actual_expense_service.py
+│   │   │   ├── cost_center_service.py
+│   │   │   ├── expense_concept_service.py
+│   │   │   └── planned_expense_service.py
+│   │   ├── __init__.py
+│   │   └── main.py
+│   ├── .env
+│   ├── .env.example
+│   ├── alembic.ini
+│   └── requirements.txt
+├── docs
+│   ├── alcance.md
+│   ├── base_datos.md
+│   ├── BITACORA_presupuesto_costos_app_MVP_actualizada.xlsx
+│   ├── catalogos_iniciales.md
+│   ├── CREATE DB.sql
+│   ├── decisiones_modelo_datos.md
+│   ├── diccionario_datos_mvp.md
+│   ├── modelo_datos.md
+│   ├── PRESUPUESTO DE COSTOS.xlsx
+│   ├── reglas_negocio.md
+│   └── sprint_1.md
+├── frontend
+│   ├── src
+│   │   ├── app
+│   │   │   ├── App.tsx
+│   │   │   ├── AppLayout.tsx
+│   │   │   └── router.tsx
+│   │   ├── components
+│   │   │   ├── actual-expenses
+│   │   │   │   ├── ActualExpenseForm.tsx
+│   │   │   │   ├── ActualExpensesFilters.tsx
+│   │   │   │   ├── ActualExpensesSummary.tsx
+│   │   │   │   └── ActualExpensesTable.tsx
+│   │   │   ├── catalogs
+│   │   │   │   ├── CostCentersList.tsx
+│   │   │   │   └── ExpenseConceptsList.tsx
+│   │   │   ├── layout
+│   │   │   │   ├── PageHeader.tsx
+│   │   │   │   ├── Sidebar.tsx
+│   │   │   │   └── Topbar.tsx
+│   │   │   ├── planned-expenses
+│   │   │   │   ├── PlannedExpenseCell.tsx
+│   │   │   │   ├── PlannedExpensesMatrix.tsx
+│   │   │   │   └── PlannedExpensesToolbar.tsx
+│   │   │   └── .gitkeep
+│   │   ├── features
+│   │   │   └── .gitkeep
+│   │   ├── pages
+│   │   │   ├── .gitkeep
+│   │   │   ├── ActualExpensesPage.tsx
+│   │   │   ├── AnalysisPage.tsx
+│   │   │   ├── CatalogsPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── NotFoundPage.tsx
+│   │   │   ├── PlannedExpensesPage.tsx
+│   │   │   └── VariancePage.tsx
+│   │   ├── services
+│   │   │   ├── .gitkeep
+│   │   │   ├── actualExpensesService.ts
+│   │   │   ├── apiClient.ts
+│   │   │   ├── catalogsService.ts
+│   │   │   └── plannedExpensesService.ts
+│   │   ├── types
+│   │   │   ├── .gitkeep
+│   │   │   ├── actualExpense.ts
+│   │   │   ├── costCenter.ts
+│   │   │   ├── expenseConcept.ts
+│   │   │   └── plannedExpense.ts
+│   │   ├── utils
+│   │   │   ├── date.ts
+│   │   │   └── money.ts
+│   │   ├── main.tsx
+│   │   ├── styles.css
+│   │   └── vite-env.d.ts
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.app.tsbuildinfo
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── tsconfig.node.tsbuildinfo
+│   ├── vite.config.d.ts
+│   ├── vite.config.js
+│   └── vite.config.ts
+├── scripts
+│   ├── mysql_create_database.sql.example
+│   ├── print_repo_tree.py
+│   ├── README.md
+│   └── seed_initial_catalogs.py
+├── .editorconfig
+├── .gitignore
+├── db_current.bat
+├── db_history.bat
+├── db_upgrade.bat
+├── instalar_backend.bat
+├── instalar_frontend.bat
+├── README.md
+├── run_backend.bat
+├── run_frontend.bat
+└── seed_catalogs.bat
