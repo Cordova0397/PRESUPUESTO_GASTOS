@@ -11,6 +11,12 @@ const navigationItems: NavItem[] = [
     description: "Resumen general del MVP"
   },
   {
+    to: "/catalogs",
+    label: "Catálogos",
+    shortLabel: "Catálogos",
+    description: "Centros y conceptos"
+  },
+  {
     to: "/planned-expenses",
     label: "Gastos planificados",
     shortLabel: "Planificados",

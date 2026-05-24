@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "./AppLayout";
 import { ActualExpensesPage } from "../pages/ActualExpensesPage";
 import { AnalysisPage } from "../pages/AnalysisPage";
+import { CatalogsPage } from "../pages/CatalogsPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { PlannedExpensesPage } from "../pages/PlannedExpensesPage";
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardPage />
+      },
+      {
+        path: "catalogs",
+        element: <CatalogsPage />
       },
       {
         path: "planned-expenses",

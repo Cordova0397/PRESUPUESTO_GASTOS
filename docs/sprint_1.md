@@ -153,6 +153,37 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se implementan CRUD, endpoints, schemas Pydantic ni servicios.
 - Crear `docs/catalogos_iniciales.md` con referencia de centros y conceptos.
 
+## Tarea T-010
+
+- Crear pantallas/listados básicos de catálogos en el frontend.
+- Conectar frontend con los endpoints reales del backend: centros de costo y conceptos de gasto.
+- Ruta nueva: `/catalogs`.
+- Agregar "Catálogos" al sidebar de navegación.
+- Vista de solo lectura: sin formularios, sin mutaciones, sin DELETE desde frontend.
+- Al cargar la página, lista centros de costo activos y auto-selecciona el primero.
+- Al seleccionar un centro, lista sus conceptos activos en un panel lateral.
+- Manejar estados de carga (skeleton), error (con botón Reintentar) y vacío.
+- Los nombres con tildes y caracteres especiales se renderizan correctamente (Viáticos, Telefonía, etc.).
+- No se implementan login, auditoría, formularios ni CRUD visual en esta tarea.
+- No se modifica el backend.
+
+## Criterios de aceptación T-010
+
+- Existe `frontend/src/types/costCenter.ts` con tipo `CostCenter`.
+- Existe `frontend/src/types/expenseConcept.ts` con tipo `ExpenseConcept`.
+- Existe `frontend/src/services/apiClient.ts` con `apiFetch` y `ApiError`.
+- Existe `frontend/src/services/catalogsService.ts` con `getActiveCostCenters` y `getActiveExpenseConceptsByCostCenter`.
+- Existe `frontend/src/pages/CatalogsPage.tsx` con gestión de estado, carga y error.
+- Existe `frontend/src/components/catalogs/CostCentersList.tsx` con indicador de color.
+- Existe `frontend/src/components/catalogs/ExpenseConceptsList.tsx` con tabla de conceptos.
+- Ruta `/catalogs` registrada en el router.
+- Sidebar muestra opción "Catálogos" con descripción "Centros y conceptos".
+- `npm run build` ejecuta sin errores.
+- Todas las rutas existentes siguen funcionando.
+- No se modifica el backend.
+- No se implementa login ni auditoría.
+- Archivos en UTF-8 sin mojibake.
+
 ## Tarea T-009
 
 - Crear endpoints CRUD de conceptos de gasto por centro de costo, usando la misma arquitectura por capas de T-008: schemas Pydantic v2, repository, service y router FastAPI.

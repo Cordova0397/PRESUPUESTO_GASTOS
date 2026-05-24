@@ -139,6 +139,26 @@ Resumen del frontend actual:
 - Páginas placeholder en español para dashboard, gastos planificados, gastos reales, desviación y análisis.
 - Sin CRUD, sin consumo de API, sin login y sin auditoría en esta fase.
 
+## Frontend: Catálogos básicos
+
+Pantalla de solo lectura que lista los catálogos del MVP conectados al backend.
+
+**Requisito:** el backend debe estar activo en `http://127.0.0.1:8000`.
+
+Ruta: `http://127.0.0.1:5173/catalogs`
+
+Comportamiento:
+- Carga centros de costo activos al entrar a la página.
+- Auto-selecciona el primer centro; al hacer clic en otro, carga sus conceptos.
+- Muestra estados de carga (skeleton), error (con botón Reintentar) y vacío.
+- Vista de solo lectura: sin formularios ni mutaciones.
+
+La URL base de la API puede sobreescribirse con la variable de entorno Vite:
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
 ## API de conceptos de gasto
 
 Los conceptos de gasto se gestionan dentro de un centro de costo. La unicidad de `code` aplica por centro: el mismo código puede existir en centros distintos pero no dentro del mismo.
