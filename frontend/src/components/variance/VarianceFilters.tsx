@@ -105,14 +105,14 @@ export function VarianceFilters({ costCenters, onApply, onReload }: Props) {
     "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200";
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       {/* Año */}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-slate-600">Año</label>
         <select
           value={draft.year}
           onChange={(e) => set("year", e.target.value)}
-          className={selectCls}
+          className={`w-full sm:w-auto ${selectCls}`}
         >
           <option value="">Todos</option>
           {YEAR_OPTIONS.map((y) => (
@@ -129,7 +129,7 @@ export function VarianceFilters({ costCenters, onApply, onReload }: Props) {
         <select
           value={draft.month}
           onChange={(e) => set("month", e.target.value)}
-          className={selectCls}
+          className={`w-full sm:w-auto ${selectCls}`}
         >
           <option value="">Todos</option>
           {MONTHS_LABELS.map((m) => (
@@ -146,7 +146,7 @@ export function VarianceFilters({ costCenters, onApply, onReload }: Props) {
         <select
           value={draft.cost_center_id}
           onChange={(e) => set("cost_center_id", e.target.value)}
-          className={selectCls}
+          className={`w-full sm:w-auto ${selectCls}`}
         >
           <option value="">Todos</option>
           {costCenters.map((cc) => (
@@ -164,7 +164,7 @@ export function VarianceFilters({ costCenters, onApply, onReload }: Props) {
           value={draft.expense_concept_id}
           onChange={(e) => set("expense_concept_id", e.target.value)}
           disabled={!draft.cost_center_id || conceptsLoading}
-          className={`${selectCls} disabled:cursor-not-allowed disabled:opacity-60`}
+          className={`w-full sm:w-auto ${selectCls} disabled:cursor-not-allowed disabled:opacity-60`}
         >
           <option value="">Todos</option>
           {filterConcepts.map((ec) => (
@@ -176,25 +176,25 @@ export function VarianceFilters({ costCenters, onApply, onReload }: Props) {
       </div>
 
       {/* Botones */}
-      <div className="flex items-end gap-2 pb-0.5">
+      <div className="flex flex-wrap gap-2 sm:items-end sm:pb-0.5">
         <button
           type="button"
           onClick={handleApply}
-          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          className="w-full rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 sm:w-auto"
         >
           Aplicar
         </button>
         <button
           type="button"
           onClick={handleClear}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
         >
           Limpiar
         </button>
         <button
           type="button"
           onClick={onReload}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
         >
           Recargar
         </button>

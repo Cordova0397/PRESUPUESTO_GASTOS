@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorState } from "../components/ui/ErrorState";
 import { VarianceFilters } from "../components/variance/VarianceFilters";
 import { VarianceSummary } from "../components/variance/VarianceSummary";
 import { VarianceTable } from "../components/variance/VarianceTable";
@@ -100,16 +101,7 @@ export function VariancePage() {
 
       {/* Error de catálogos */}
       {ccError && !ccLoading && (
-        <div className="flex items-center gap-4 rounded-[20px] border border-red-200 bg-red-50 px-6 py-4">
-          <p className="text-sm text-red-600">{ccError}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Reintentar
-          </button>
-        </div>
+        <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
       )}
 
       {/* Tabla de desviaciones */}
@@ -139,15 +131,8 @@ export function VariancePage() {
 
         {/* Error de registros */}
         {recordsError && !recordsLoading && (
-          <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
-            <p className="text-sm text-red-600">{recordsError}</p>
-            <button
-              type="button"
-              onClick={handleReload}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Reintentar
-            </button>
+          <div className="border-b border-slate-100 px-6 py-4">
+            <ErrorState message={recordsError} onRetry={handleReload} compact />
           </div>
         )}
 

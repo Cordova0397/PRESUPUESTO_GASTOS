@@ -1,3 +1,4 @@
+import { EmptyState } from "../ui/EmptyState";
 import type { CostCenter } from "../../types/costCenter";
 
 type Props = {
@@ -35,9 +36,9 @@ export function CostCentersList({
       {isLoading ? (
         <Skeleton />
       ) : costCenters.length === 0 ? (
-        <p className="py-10 text-center text-sm text-slate-400">
-          No hay centros de costo activos.
-        </p>
+        <div className="px-4 py-10">
+          <EmptyState message="No hay centros de costo activos." compact />
+        </div>
       ) : (
         <div className="space-y-1.5 p-4">
           {costCenters.map((cc) => {

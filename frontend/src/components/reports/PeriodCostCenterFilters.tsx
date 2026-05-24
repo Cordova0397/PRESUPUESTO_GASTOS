@@ -86,14 +86,14 @@ export function PeriodCostCenterFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       {/* Año */}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-slate-600">Año</label>
         <select
           value={draft.year}
           onChange={(e) => set("year", e.target.value)}
-          className={selectCls}
+          className={`w-full sm:w-auto ${selectCls}`}
         >
           <option value="">Todos</option>
           {YEAR_OPTIONS.map((y) => (
@@ -110,7 +110,7 @@ export function PeriodCostCenterFilters({
         <select
           value={draft.month}
           onChange={(e) => set("month", e.target.value)}
-          className={selectCls}
+          className={`w-full sm:w-auto ${selectCls}`}
         >
           <option value="">Todos</option>
           {MONTHS_LABELS.map((m) => (
@@ -127,7 +127,7 @@ export function PeriodCostCenterFilters({
         <select
           value={draft.cost_center_id}
           onChange={(e) => set("cost_center_id", e.target.value)}
-          className={selectCls}
+          className={`w-full lg:min-w-[320px] ${selectCls}`}
         >
           <option value="">Todos</option>
           {costCenters.map((cc) => (
@@ -139,25 +139,25 @@ export function PeriodCostCenterFilters({
       </div>
 
       {/* Botones */}
-      <div className="flex items-end gap-2 pb-0.5">
+      <div className="flex flex-wrap gap-2 sm:pb-0.5">
         <button
           type="button"
           onClick={handleApply}
-          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          className="w-full rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 sm:w-auto"
         >
           Aplicar
         </button>
         <button
           type="button"
           onClick={handleClear}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
         >
           Limpiar
         </button>
         <button
           type="button"
           onClick={onReload}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
         >
           Recargar
         </button>

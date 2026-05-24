@@ -1,3 +1,5 @@
+import { TableEmptyRow } from "../ui/TableEmptyRow";
+import { TableSkeletonRows } from "../ui/TableSkeletonRows";
 import type { ActualExpense } from "../../types/actualExpense";
 import { formatMoneyForDisplay } from "../../utils/money";
 
@@ -8,18 +10,6 @@ type Props = {
   onEdit: (record: ActualExpense) => void;
   onDelete: (id: number) => void;
 };
-
-function SkeletonRow() {
-  return (
-    <tr className="border-t border-slate-100">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 animate-pulse rounded bg-slate-100" />
-        </td>
-      ))}
-    </tr>
-  );
-}
 
 const MONTHS = [
   "", "Ene", "Feb", "Mar", "Abr", "May", "Jun",
@@ -56,16 +46,12 @@ export function ActualExpensesTable({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            <TableSkeletonRows columns={8} />
           ) : records.length === 0 ? (
-            <tr>
-              <td
-                colSpan={8}
-                className="py-12 text-center text-sm text-slate-400"
-              >
-                No hay gastos reales con los filtros actuales.
-              </td>
-            </tr>
+            <TableEmptyRow
+              colSpan={8}
+              message="No hay gastos reales con los filtros actuales."
+            />
           ) : (
             records.map((record) => {
               const isEditing = record.id === editingId;

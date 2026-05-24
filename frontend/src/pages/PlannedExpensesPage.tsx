@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PlannedExpensesMatrix } from "../components/planned-expenses/PlannedExpensesMatrix";
 import { PlannedExpensesToolbar } from "../components/planned-expenses/PlannedExpensesToolbar";
+import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
 import { getActiveCostCenters, getActiveExpenseConceptsByCostCenter } from "../services/catalogsService";
 import {
   createPlannedExpense,
@@ -222,18 +224,11 @@ export function PlannedExpensesPage() {
               <div className="h-8 w-48 animate-pulse rounded bg-slate-200" />
             </div>
           ) : errorCostCenters ? (
-            <div className="flex items-center gap-4">
-              <p className="text-sm text-red-600">
-                Error al cargar los centros de costo.
-              </p>
-              <button
-                type="button"
-                onClick={loadCostCenters}
-                className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Reintentar
-              </button>
-            </div>
+            <ErrorState
+              message="Error al cargar los centros de costo."
+              onRetry={loadCostCenters}
+              compact
+            />
           ) : costCenters.length === 0 ? (
             <p className="text-sm text-slate-500">
               No hay centros de costo activos.
@@ -269,33 +264,29 @@ export function PlannedExpensesPage() {
 
         <div className="min-h-[200px]">
           {isLoadingData ? (
-            <div className="space-y-3 px-6 py-8">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <div className="h-8 w-40 animate-pulse rounded bg-slate-100" />
-                  {Array.from({ length: 12 }).map((__, m) => (
-                    <div key={m} className="h-8 w-20 animate-pulse rounded bg-slate-100" />
-                  ))}
-                </div>
-              ))}
+            <div className="overflow-x-auto scrollbar-thin">
+              <div className="min-w-[1100px] space-y-3 px-6 py-8">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex gap-2">
+                    <div className="h-8 w-40 animate-pulse rounded bg-slate-100" />
+                    {Array.from({ length: 12 }).map((__, m) => (
+                      <div key={m} className="h-8 w-20 animate-pulse rounded bg-slate-100" />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : errorData ? (
-            <div className="flex flex-col items-center gap-3 py-12">
-              <p className="text-sm text-red-600">
-                Error al cargar los datos. Verifica que el backend esté activo.
-              </p>
-              <button
-                type="button"
-                onClick={handleReload}
-                className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Reintentar
-              </button>
+            <div className="px-6 py-10">
+              <ErrorState
+                message="Error al cargar los datos. Verifica que el backend esté activo."
+                onRetry={handleReload}
+              />
             </div>
           ) : selectedCostCenterId === null ? (
-            <p className="py-12 text-center text-sm text-slate-500">
-              Selecciona un centro de costo para comenzar.
-            </p>
+            <div className="px-6 py-10">
+              <EmptyState message="Selecciona un centro de costo para comenzar." />
+            </div>
           ) : (
             <PlannedExpensesMatrix
               concepts={concepts}

@@ -1,3 +1,5 @@
+import { TableEmptyRow } from "../ui/TableEmptyRow";
+import { TableSkeletonRows } from "../ui/TableSkeletonRows";
 import { SemaphoreBadge } from "../reports/SemaphoreBadge";
 import type { ExpenseVariance } from "../../types/report";
 import { formatMoneyForDisplay } from "../../utils/money";
@@ -81,18 +83,6 @@ function DeviationAmount({ value }: { value: string }) {
   );
 }
 
-function SkeletonRow() {
-  return (
-    <tr className="border-t border-slate-100">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 animate-pulse rounded bg-slate-100" />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
 export function VarianceTable({ records, isLoading }: Props) {
   return (
     <div className="overflow-x-auto scrollbar-thin">
@@ -112,16 +102,12 @@ export function VarianceTable({ records, isLoading }: Props) {
         </thead>
         <tbody className="divide-y divide-slate-100">
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            <TableSkeletonRows columns={9} />
           ) : records.length === 0 ? (
-            <tr>
-              <td
-                colSpan={9}
-                className="py-12 text-center text-sm text-slate-400"
-              >
-                No hay desviaciones con los filtros actuales.
-              </td>
-            </tr>
+            <TableEmptyRow
+              colSpan={9}
+              message="No hay desviaciones con los filtros actuales."
+            />
           ) : (
             records.map((record, idx) => {
               const trafficLight = getTrafficLightStatus({

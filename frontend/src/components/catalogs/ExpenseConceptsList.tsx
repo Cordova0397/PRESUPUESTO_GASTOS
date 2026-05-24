@@ -1,3 +1,5 @@
+import { EmptyState } from "../ui/EmptyState";
+import { ErrorState } from "../ui/ErrorState";
 import type { CostCenter } from "../../types/costCenter";
 import type { ExpenseConcept } from "../../types/expenseConcept";
 
@@ -53,22 +55,21 @@ export function ExpenseConceptsList({
         <Skeleton />
       ) : error ? (
         <div className="p-6">
-          <p className="text-sm font-semibold text-red-700">Error al cargar conceptos</p>
-          <p className="mt-2 text-sm text-red-600">{error}</p>
-          <button
-            onClick={onRetry}
-            className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-red-700"
-          >
-            Reintentar
-          </button>
+          <ErrorState
+            title="Error al cargar conceptos"
+            message={error}
+            onRetry={onRetry}
+          />
         </div>
       ) : expenseConcepts.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-slate-400">
-            {selectedCostCenter
-              ? `No hay conceptos activos en ${selectedCostCenter.name}.`
-              : "Selecciona un centro de costo para ver sus conceptos."}
-          </p>
+        <div className="px-6 py-12">
+          <EmptyState
+            message={
+              selectedCostCenter
+                ? `No hay conceptos activos en ${selectedCostCenter.name}.`
+                : "Selecciona un centro de costo para ver sus conceptos."
+            }
+          />
         </div>
       ) : (
         <div className="overflow-x-auto">

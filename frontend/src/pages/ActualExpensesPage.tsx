@@ -5,6 +5,7 @@ import { ActualExpensesFilters } from "../components/actual-expenses/ActualExpen
 import { ActualExpensesSummary } from "../components/actual-expenses/ActualExpensesSummary";
 import { ActualExpensesTable } from "../components/actual-expenses/ActualExpensesTable";
 import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorState } from "../components/ui/ErrorState";
 import { getActiveCostCenters } from "../services/catalogsService";
 import {
   createActualExpense,
@@ -195,16 +196,7 @@ export function ActualExpensesPage() {
               ))}
             </div>
           ) : ccError ? (
-            <div className="flex items-center gap-4">
-              <p className="text-sm text-red-600">{ccError}</p>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Reintentar
-              </button>
-            </div>
+            <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
           ) : (
             <ActualExpenseForm
               costCenters={costCenters}
@@ -224,24 +216,27 @@ export function ActualExpensesPage() {
           <h2 className="mb-4 text-base font-semibold text-slate-950">
             Gastos registrados
           </h2>
-          <ActualExpensesFilters
-            costCenters={costCenters}
-            onApply={handleFiltersApply}
-            onReload={handleReload}
-          />
+          {ccLoading ? (
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-8 w-32 animate-pulse rounded-lg bg-slate-100" />
+              ))}
+            </div>
+          ) : ccError ? (
+            <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
+          ) : (
+            <ActualExpensesFilters
+              costCenters={costCenters}
+              onApply={handleFiltersApply}
+              onReload={handleReload}
+            />
+          )}
         </div>
 
         {/* Error de carga de registros */}
         {recordsError && !recordsLoading && (
-          <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
-            <p className="text-sm text-red-600">{recordsError}</p>
-            <button
-              type="button"
-              onClick={handleReload}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Reintentar
-            </button>
+          <div className="border-b border-slate-100 px-6 py-4">
+            <ErrorState message={recordsError} onRetry={handleReload} compact />
           </div>
         )}
 

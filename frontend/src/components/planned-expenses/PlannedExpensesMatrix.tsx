@@ -1,3 +1,4 @@
+import { EmptyState } from "../ui/EmptyState";
 import type { ExpenseConcept } from "../../types/expenseConcept";
 import type { PlannedExpense } from "../../types/plannedExpense";
 import { formatMoneyForDisplay, isValidMoneyInput } from "../../utils/money";
@@ -78,9 +79,9 @@ export function PlannedExpensesMatrix({
 
   if (concepts.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-slate-500">
-        No hay conceptos activos para este centro de costo.
-      </p>
+      <div className="px-6 py-10">
+        <EmptyState message="No hay conceptos activos para este centro de costo." />
+      </div>
     );
   }
 

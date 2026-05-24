@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CostCentersList } from "../components/catalogs/CostCentersList";
 import { ExpenseConceptsList } from "../components/catalogs/ExpenseConceptsList";
 import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorState } from "../components/ui/ErrorState";
 import {
   getActiveCostCenters,
   getActiveExpenseConceptsByCostCenter,
@@ -97,18 +98,11 @@ export function CatalogsPage() {
       />
 
       {costCentersError ? (
-        <section className="rounded-[28px] border border-red-200 bg-red-50 p-6 shadow-panel">
-          <p className="text-sm font-semibold text-red-700">
-            Error al cargar los catálogos
-          </p>
-          <p className="mt-2 text-sm text-red-600">{costCentersError}</p>
-          <button
-            onClick={() => setCcRetry((n) => n + 1)}
-            className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-red-700"
-          >
-            Reintentar
-          </button>
-        </section>
+        <ErrorState
+          title="Error al cargar los catálogos"
+          message={costCentersError}
+          onRetry={() => setCcRetry((n) => n + 1)}
+        />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
           <CostCentersList

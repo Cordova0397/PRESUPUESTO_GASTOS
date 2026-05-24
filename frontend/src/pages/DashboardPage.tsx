@@ -5,6 +5,7 @@ import { DashboardFilters } from "../components/dashboard/DashboardFilters";
 import { KpiCardsGrid } from "../components/dashboard/KpiCardsGrid";
 import { MonthlyBudgetChart } from "../components/dashboard/MonthlyBudgetChart";
 import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorState } from "../components/ui/ErrorState";
 import { getActiveCostCenters } from "../services/catalogsService";
 import { getExpenseAnalysis, getExpenseKpis } from "../services/reportsService";
 import type { CostCenter } from "../types/costCenter";
@@ -145,16 +146,7 @@ export function DashboardPage() {
 
       {/* Error de catálogos */}
       {ccError && !ccLoading && (
-        <div className="flex items-center gap-4 rounded-[20px] border border-red-200 bg-red-50 px-6 py-4">
-          <p className="text-sm text-red-600">{ccError}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Reintentar
-          </button>
-        </div>
+        <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
       )}
 
       {/* Panel de filtros */}
@@ -183,15 +175,8 @@ export function DashboardPage() {
 
         {/* Error KPIs */}
         {kpisError && !kpisLoading && (
-          <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
-            <p className="text-sm text-red-600">{kpisError}</p>
-            <button
-              type="button"
-              onClick={handleReload}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Reintentar
-            </button>
+          <div className="border-b border-slate-100 px-6 py-4">
+            <ErrorState message={kpisError} onRetry={handleReload} compact />
           </div>
         )}
 
