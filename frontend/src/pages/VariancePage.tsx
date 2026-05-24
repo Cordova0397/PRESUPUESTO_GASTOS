@@ -1,56 +1,163 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { PageHeader } from "../components/layout/PageHeader";
+import { VarianceFilters } from "../components/variance/VarianceFilters";
+import { VarianceSummary } from "../components/variance/VarianceSummary";
+import { VarianceTable } from "../components/variance/VarianceTable";
+import { getActiveCostCenters } from "../services/catalogsService";
+import { getExpenseVariance } from "../services/reportsService";
+import type { CostCenter } from "../types/costCenter";
+import type { ExpenseVariance } from "../types/report";
+import type { ExpenseVarianceFilters } from "../types/report";
+import { getCurrentYearInLima } from "../utils/date";
 
 export function VariancePage() {
+  // Catálogos
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [ccLoading, setCcLoading] = useState(true);
+  const [ccError, setCcError] = useState<string | null>(null);
+
+  // Registros de desviación
+  const [records, setRecords] = useState<ExpenseVariance[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordsError, setRecordsError] = useState<string | null>(null);
+
+  // Filtros activos (año actual por defecto)
+  const [activeFilters, setActiveFilters] = useState<ExpenseVarianceFilters>({
+    year: getCurrentYearInLima(),
+  });
+
+  // Evitar race conditions en cargas concurrentes
+  const loadIdRef = useRef(0);
+
+  // ─── Cargar centros de costo al montar ───────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setCcLoading(true);
+    setCcError(null);
+    getActiveCostCenters()
+      .then((data) => {
+        if (!cancelled) setCostCenters(data);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setCcError(
+            err instanceof Error ? err.message : "Error al cargar centros de costo.",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setCcLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ─── Cargar desviaciones cuando cambian filtros ───────────────────────────
+  const loadRecords = useCallback(async () => {
+    const id = ++loadIdRef.current;
+    setRecordsLoading(true);
+    setRecordsError(null);
+    try {
+      const data = await getExpenseVariance(activeFilters);
+      if (loadIdRef.current === id) setRecords(data);
+    } catch (err) {
+      if (loadIdRef.current === id)
+        setRecordsError(
+          err instanceof Error ? err.message : "Error al cargar las desviaciones.",
+        );
+    } finally {
+      if (loadIdRef.current === id) setRecordsLoading(false);
+    }
+  }, [activeFilters]);
+
+  useEffect(() => {
+    void loadRecords();
+  }, [loadRecords]);
+
+  // ─── Manejadores ─────────────────────────────────────────────────────────
+  function handleFiltersApply(filters: ExpenseVarianceFilters) {
+    setActiveFilters(filters);
+  }
+
+  function handleReload() {
+    void loadRecords();
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Desviación de gastos"
-        description="Comparación calculada entre gasto real y gasto planificado."
-        badge="Regla visible"
+        description="Vista de solo lectura calculada desde gastos planificados y reales."
+        badge="Solo lectura"
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <article className="rounded-[28px] border border-brand-200/70 bg-white/95 p-6 shadow-panel">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-700">
-            Fórmula del negocio
-          </p>
-          <div className="mt-5 rounded-[24px] bg-brand-50 p-6">
-            <p className="text-sm font-medium text-brand-700">
-              La desviación monetaria siempre debe calcularse como:
-            </p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-              Desviación = Real - Planificado
-            </p>
-          </div>
-          <p className="mt-5 text-sm leading-7 text-slate-600">
-            En esta fase solo se deja visible la regla para mantener consistencia
-            funcional. Aún no hay cálculos, filtros ni datos conectados.
-          </p>
-        </article>
+      {/* Nota informativa */}
+      <p className="rounded-[16px] border border-slate-200/70 bg-slate-50 px-5 py-3 text-xs text-slate-500">
+        La desviación se calcula en backend como gasto real menos gasto planificado.
+        Esta pantalla no guarda resultados calculados.
+      </p>
 
-        <article className="rounded-[28px] border border-slate-200/80 bg-mist p-6 shadow-panel">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Próxima evolución de la pantalla
+      {/* Error de catálogos */}
+      {ccError && !ccLoading && (
+        <div className="flex items-center gap-4 rounded-[20px] border border-red-200 bg-red-50 px-6 py-4">
+          <p className="text-sm text-red-600">{ccError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {/* Tabla de desviaciones */}
+      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+        {/* Filtros */}
+        <div className="border-b border-slate-200 px-6 py-5">
+          <h2 className="mb-4 text-base font-semibold text-slate-950">
+            Desviaciones por periodo, centro y concepto
           </h2>
-          <div className="mt-4 space-y-4">
-            <div className="rounded-2xl bg-white/80 p-4">
-              <p className="text-sm font-semibold text-slate-900">
-                Comparativos por periodo
-              </p>
-              <p className="mt-2 text-sm text-slate-600">
-                Año, mes, centro y concepto con señales visuales de desvío.
-              </p>
+          {ccLoading ? (
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-8 w-32 animate-pulse rounded-lg bg-slate-100"
+                />
+              ))}
             </div>
-            <div className="rounded-2xl bg-white/80 p-4">
-              <p className="text-sm font-semibold text-slate-900">
-                Alertas y priorización
-              </p>
-              <p className="mt-2 text-sm text-slate-600">
-                Espacio preparado para resaltar desviaciones positivas y negativas.
-              </p>
-            </div>
+          ) : (
+            <VarianceFilters
+              costCenters={costCenters}
+              onApply={handleFiltersApply}
+              onReload={handleReload}
+            />
+          )}
+        </div>
+
+        {/* Error de registros */}
+        {recordsError && !recordsLoading && (
+          <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
+            <p className="text-sm text-red-600">{recordsError}</p>
+            <button
+              type="button"
+              onClick={handleReload}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Reintentar
+            </button>
           </div>
-        </article>
+        )}
+
+        {/* Resumen */}
+        <div className="border-b border-slate-100">
+          <VarianceSummary records={records} isLoading={recordsLoading} />
+        </div>
+
+        {/* Tabla */}
+        <VarianceTable records={records} isLoading={recordsLoading} />
       </section>
     </div>
   );
