@@ -2,6 +2,8 @@ import { apiFetch } from "./apiClient";
 import type {
   ExpenseAnalysis,
   ExpenseAnalysisFilters,
+  ExpenseKpis,
+  ExpenseKpisFilters,
   ExpenseVariance,
   ExpenseVarianceFilters,
 } from "../types/report";
@@ -45,4 +47,15 @@ export function getExpenseAnalysis(
 
   const qs = params.toString();
   return apiFetch<ExpenseAnalysis[]>(`/api/reports/analysis${qs ? `?${qs}` : ""}`);
+}
+
+export function getExpenseKpis(
+  filters: ExpenseKpisFilters = {},
+): Promise<ExpenseKpis> {
+  const params = new URLSearchParams();
+  if (filters.year !== undefined) params.set("year", String(filters.year));
+  if (filters.month !== undefined) params.set("month", String(filters.month));
+
+  const qs = params.toString();
+  return apiFetch<ExpenseKpis>(`/api/reports/kpis${qs ? `?${qs}` : ""}`);
 }

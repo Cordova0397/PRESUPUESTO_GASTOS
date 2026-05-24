@@ -55,3 +55,19 @@ export type ExpenseAnalysisFilters = {
   month?: number;
   cost_center_id?: number;
 };
+
+export type ExpenseKpis = {
+  year: number | null;
+  month: number | null;
+  planned_amount_total: string;
+  actual_amount_total: string;
+  deviation_amount_total: string;
+  deviation_percentage: string | null;
+  execution_percentage: string | null;
+  status: "SIN PRESUPUESTO" | "SOBRECOSTO" | "AHORRO" | "EN PRESUPUESTO" | string;
+};
+
+export type ExpenseKpisFilters = {
+  year?: number;
+  month?: number;
+};
