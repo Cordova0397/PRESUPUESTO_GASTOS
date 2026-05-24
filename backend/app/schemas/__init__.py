@@ -13,3 +13,10 @@ from app.schemas.expense_concept import (  # noqa: F401
     ExpenseConceptRead,
     ExpenseConceptUpdate,
 )
+from app.schemas.planned_expense import (  # noqa: F401
+    PlannedExpenseCreate,
+    PlannedExpenseDeleteResponse,
+    PlannedExpensePatch,
+    PlannedExpenseRead,
+    PlannedExpenseUpdate,
+)

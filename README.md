@@ -139,6 +139,53 @@ Resumen del frontend actual:
 - Páginas placeholder en español para dashboard, gastos planificados, gastos reales, desviación y análisis.
 - Sin CRUD, sin consumo de API, sin login y sin auditoría en esta fase.
 
+## API de gastos planificados
+
+Base path: `http://127.0.0.1:8000/api/planned-expenses`
+
+| Método | Ruta | Descripción | Respuestas |
+|--------|------|-------------|------------|
+| GET | `/api/planned-expenses` | Lista gastos planificados | 200 |
+| GET | `/api/planned-expenses/{id}` | Obtiene registro por ID | 200 / 404 |
+| POST | `/api/planned-expenses` | Crea gasto planificado | 201 / 404 / 409 / 422 |
+| PUT | `/api/planned-expenses/{id}` | Actualiza completo | 200 / 404 / 409 / 422 |
+| PATCH | `/api/planned-expenses/{id}` | Actualización parcial | 200 / 404 / 409 / 422 |
+| DELETE | `/api/planned-expenses/{id}` | Eliminación física | 200 / 404 |
+
+Reglas de negocio:
+- `amount` usa `Decimal`, nunca float. Debe ser `>= 0`.
+- `month` debe estar entre 1 y 12.
+- Unicidad por `(year, month, cost_center_id, expense_concept_id)`.
+- `expense_concept_id` debe pertenecer al `cost_center_id` indicado.
+- DELETE elimina físicamente el registro (no hay baja lógica en planned_expenses del MVP).
+- La desviación **no se calcula ni se guarda** en esta tabla; se calcula desde gastos planificados y reales.
+
+Query params disponibles en GET lista: `skip`, `limit` (máx 200), `year`, `month`, `cost_center_id`, `expense_concept_id`.
+
+La respuesta incluye campos enriquecidos: `cost_center_code`, `cost_center_name`, `expense_concept_code`, `expense_concept_name`.
+
+### Ejemplos de prueba con PowerShell
+
+```powershell
+# Crear
+$body = @{
+    year = 2026; month = 5; cost_center_id = 2
+    expense_concept_id = 3; amount = "9800.00"
+    notes = "Presupuesto sueldo vendedores"
+} | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/planned-expenses" -ContentType "application/json" -Body $body
+
+# Listar con filtros
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/planned-expenses?year=2026&month=5&cost_center_id=2"
+
+# PATCH parcial (solo amount)
+$body = @{ amount = "9900.00" } | ConvertTo-Json
+Invoke-RestMethod -Method PATCH -Uri "http://127.0.0.1:8000/api/planned-expenses/1" -ContentType "application/json" -Body $body
+
+# DELETE (eliminación física)
+Invoke-RestMethod -Method DELETE -Uri "http://127.0.0.1:8000/api/planned-expenses/1"
+```
+
 ## Frontend: Catálogos básicos
 
 Pantalla de solo lectura que lista los catálogos del MVP conectados al backend.

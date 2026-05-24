@@ -153,6 +153,43 @@ Levantar la fundacion tecnica inicial del proyecto PRESUPUESTO GASTOS con separa
 - No se implementan CRUD, endpoints, schemas Pydantic ni servicios.
 - Crear `docs/catalogos_iniciales.md` con referencia de centros y conceptos.
 
+## Tarea T-011
+
+- Crear endpoints CRUD de gastos planificados usando arquitectura en capas: schemas Pydantic v2, repository, service y router FastAPI.
+- Base path: `/api/planned-expenses`.
+- Endpoints: GET listado con filtros, GET por ID, POST crear, PUT actualizar completo, PATCH actualizar parcial, DELETE eliminación física.
+- `amount` usa `Decimal` (no float). Validado >= 0.
+- Unicidad por `(year, month, cost_center_id, expense_concept_id)`.
+- Se valida que `expense_concept_id` pertenezca al `cost_center_id`.
+- La respuesta incluye campos enriquecidos: `cost_center_code`, `cost_center_name`, `expense_concept_code`, `expense_concept_name`.
+- DELETE elimina físicamente el registro (planned_expenses no tiene is_active).
+- No se calculan ni guardan desviaciones.
+- No se implementan frontend, login ni auditoría en esta tarea.
+
+## Criterios de aceptación T-011
+
+- Existe `backend/app/schemas/planned_expense.py` con schemas Pydantic v2 y `Decimal`.
+- Existe `backend/app/repositories/planned_expense_repository.py` sin lógica HTTP.
+- Existe `backend/app/services/planned_expense_service.py` con validaciones de negocio.
+- Existe `backend/app/api/planned_expenses.py` con el router FastAPI.
+- `backend/app/main.py` registra el router de gastos planificados.
+- `GET /api/planned-expenses` lista registros ordenados por year, month, cost_center_id, expense_concept_id.
+- Filtros funcionales por `year`, `month`, `cost_center_id`, `expense_concept_id`.
+- `GET /api/planned-expenses/{id}` retorna el registro o 404 con mensaje en español.
+- `POST /api/planned-expenses` crea un registro con status 201.
+- `POST` con clave duplicada retorna 409.
+- `POST` con `expense_concept_id` que no pertenece al centro retorna 422.
+- `POST` con `amount` negativo retorna 422.
+- `POST` con `month` fuera de rango retorna 422.
+- `PUT` actualiza el registro completo con validaciones.
+- `PATCH` actualiza parcialmente; valida unicidad con el estado final combinado.
+- `DELETE` elimina físicamente el registro.
+- Campos enriquecidos (`cost_center_code`, `expense_concept_name`, etc.) presentes en la respuesta.
+- `/health` y `/health/db` siguen funcionando.
+- No se implementa frontend, login ni auditoría.
+- No se calculan ni guardan desviaciones.
+- Archivos en UTF-8 sin mojibake.
+
 ## Tarea T-010
 
 - Crear pantallas/listados básicos de catálogos en el frontend.
