@@ -7,11 +7,15 @@ from pydantic import BaseModel
 
 
 class ExpenseKpisRead(BaseModel):
-    """KPIs generales del presupuesto para un filtro de año y/o mes.
+    """KPIs generales del presupuesto para un filtro de año, mes y/o centro de costo.
 
     Los totales se calculan sumando planned_amount y actual_amount de todos
-    los centros de costo del filtro. Los porcentajes se calculan sobre los
-    totales globales, no como promedio de porcentajes individuales.
+    los registros que coinciden con el filtro. Los porcentajes se calculan
+    sobre los totales globales del filtro, no como promedio de porcentajes
+    individuales.
+
+    Si cost_center_id es None: consolida todos los centros de costo.
+    Si cost_center_id tiene valor: consolida solo ese centro de costo.
 
     Formulas:
         deviation_amount_total  = actual_amount_total - planned_amount_total
@@ -33,6 +37,7 @@ class ExpenseKpisRead(BaseModel):
 
     year: int | None
     month: int | None
+    cost_center_id: int | None
     planned_amount_total: Decimal
     actual_amount_total: Decimal
     deviation_amount_total: Decimal

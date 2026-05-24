@@ -134,21 +134,30 @@ def get_expense_kpis(
     db: DbDep,
     year: int | None = Query(default=None, ge=2000, le=2099),
     month: int | None = Query(default=None, ge=1, le=12),
+    cost_center_id: int | None = Query(default=None, gt=0),
 ) -> ExpenseKpisRead:
-    """Devuelve los KPIs generales del presupuesto para el filtro indicado.
+    """Devuelve los KPIs del presupuesto para el filtro de año, mes y/o centro de costo.
 
-    Consolida todos los centros de costo del periodo en un unico conjunto
-    de totales. Los porcentajes se calculan sobre los totales globales,
+    Si cost_center_id no se envía: consolida todos los centros de costo del filtro.
+    Si cost_center_id se envía: consolida solo ese centro de costo.
+
+    Los porcentajes se calculan sobre los totales globales del filtro,
     no como promedio de porcentajes por centro o concepto.
 
     Campos devueltos:
-    - planned_amount_total:  suma global planificada.
-    - actual_amount_total:   suma global real.
+    - cost_center_id:        centro filtrado, o null si se consolidan todos.
+    - planned_amount_total:  suma planificada del filtro.
+    - actual_amount_total:   suma real del filtro.
     - deviation_amount_total = actual_amount_total - planned_amount_total.
-    - deviation_percentage:  ratio 4 decimales sobre totales globales.
-    - execution_percentage:  ratio 4 decimales sobre totales globales.
+    - deviation_percentage:  ratio 4 decimales sobre totales del filtro.
+    - execution_percentage:  ratio 4 decimales sobre totales del filtro.
     - status:                estado calculado con la misma logica que /variance.
 
     No almacena KPIs en base de datos.
     """
-    return svc.get_expense_kpis(db, year=year, month=month)
+    return svc.get_expense_kpis(
+        db,
+        year=year,
+        month=month,
+        cost_center_id=cost_center_id,
+    )

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BudgetVsActualChart } from "../components/dashboard/BudgetVsActualChart";
-import { MonthlyBudgetChart } from "../components/dashboard/MonthlyBudgetChart";
 import { DashboardFilters } from "../components/dashboard/DashboardFilters";
 import { KpiCardsGrid } from "../components/dashboard/KpiCardsGrid";
+import { MonthlyBudgetChart } from "../components/dashboard/MonthlyBudgetChart";
 import { PageHeader } from "../components/layout/PageHeader";
+import { getActiveCostCenters } from "../services/catalogsService";
 import { getExpenseAnalysis, getExpenseKpis } from "../services/reportsService";
+import type { CostCenter } from "../types/costCenter";
 import type { ExpenseAnalysis, ExpenseKpis, ExpenseKpisFilters } from "../types/report";
 import { getCurrentYearInLima } from "../utils/date";
 
@@ -17,14 +19,22 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function DashboardPage() {
+  // ─── Catálogos ─────────────────────────────────────────────────────────────
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [ccLoading, setCcLoading] = useState(true);
+  const [ccError, setCcError] = useState<string | null>(null);
+
+  // ─── KPIs ──────────────────────────────────────────────────────────────────
   const [kpis, setKpis] = useState<ExpenseKpis | null>(null);
   const [kpisLoading, setKpisLoading] = useState(true);
   const [kpisError, setKpisError] = useState<string | null>(null);
 
+  // ─── Análisis para gráficos ────────────────────────────────────────────────
   const [analysisRecords, setAnalysisRecords] = useState<ExpenseAnalysis[]>([]);
   const [analysisLoading, setAnalysisLoading] = useState(true);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+  // ─── Filtros activos (año actual por defecto) ──────────────────────────────
   const [activeFilters, setActiveFilters] = useState<ExpenseKpisFilters>({
     year: getCurrentYearInLima(),
   });
@@ -32,6 +42,30 @@ export function DashboardPage() {
   const kpisLoadIdRef = useRef(0);
   const chartLoadIdRef = useRef(0);
 
+  // ─── Cargar centros de costo al montar ────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setCcLoading(true);
+    setCcError(null);
+    getActiveCostCenters()
+      .then((data) => {
+        if (!cancelled) setCostCenters(data);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setCcError(
+            err instanceof Error ? err.message : "Error al cargar centros de costo.",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setCcLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ─── Cargar KPIs cuando cambian filtros ───────────────────────────────────
   const loadKpis = useCallback(async () => {
     const id = ++kpisLoadIdRef.current;
     setKpisLoading(true);
@@ -49,6 +83,7 @@ export function DashboardPage() {
     }
   }, [activeFilters]);
 
+  // ─── Cargar análisis cuando cambian filtros ───────────────────────────────
   const loadChartData = useCallback(async () => {
     const id = ++chartLoadIdRef.current;
     setAnalysisLoading(true);
@@ -57,6 +92,7 @@ export function DashboardPage() {
       const data = await getExpenseAnalysis({
         year: activeFilters.year,
         month: activeFilters.month,
+        cost_center_id: activeFilters.cost_center_id,
       });
       if (chartLoadIdRef.current === id) setAnalysisRecords(data);
     } catch (err) {
@@ -79,6 +115,7 @@ export function DashboardPage() {
     void loadChartData();
   }, [loadChartData]);
 
+  // ─── Manejadores ──────────────────────────────────────────────────────────
   function handleFiltersApply(filters: ExpenseKpisFilters) {
     setActiveFilters(filters);
   }
@@ -106,13 +143,42 @@ export function DashboardPage() {
         pantalla no guarda resultados calculados.
       </p>
 
+      {/* Error de catálogos */}
+      {ccError && !ccLoading && (
+        <div className="flex items-center gap-4 rounded-[20px] border border-red-200 bg-red-50 px-6 py-4">
+          <p className="text-sm text-red-600">{ccError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Panel de filtros */}
       <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
         <div className="border-b border-slate-200 px-6 py-5">
           <h2 className="mb-4 text-base font-semibold text-slate-950">
-            Filtros de periodo
+            Filtros de periodo y centro de costo
           </h2>
-          <DashboardFilters onApply={handleFiltersApply} onReload={handleReload} />
+          {ccLoading ? (
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-8 w-32 animate-pulse rounded-lg bg-slate-100"
+                />
+              ))}
+            </div>
+          ) : (
+            <DashboardFilters
+              costCenters={costCenters}
+              onApply={handleFiltersApply}
+              onReload={handleReload}
+            />
+          )}
         </div>
 
         {/* Error KPIs */}
@@ -144,7 +210,7 @@ export function DashboardPage() {
       {/* Tarjetas KPI */}
       <KpiCardsGrid kpis={kpis} isLoading={kpisLoading} />
 
-      {/* Gráfico Planificado vs Real */}
+      {/* Gráfico Planificado vs Real por centro */}
       <BudgetVsActualChart
         records={analysisRecords}
         isLoading={analysisLoading}

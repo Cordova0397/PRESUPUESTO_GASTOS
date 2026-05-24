@@ -359,11 +359,15 @@ def get_expense_kpis(
     db: Session,
     year: int | None,
     month: int | None,
+    cost_center_id: int | None,
 ) -> ExpenseKpisRead:
-    """Calcula los KPIs generales del presupuesto para el filtro de año y/o mes.
+    """Calcula los KPIs del presupuesto para el filtro de año, mes y/o centro de costo.
 
     Reutiliza list_expense_analysis() para obtener los agregados por centro
-    y los consolida en un unico conjunto de totales globales.
+    y los consolida en un unico conjunto de totales globales del filtro.
+
+    Si cost_center_id es None: consolida todos los centros de costo.
+    Si cost_center_id tiene valor: consolida solo ese centro de costo.
 
     Reglas de calculo sobre totales globales:
         deviation_amount_total = actual_amount_total - planned_amount_total
@@ -388,7 +392,7 @@ def get_expense_kpis(
         db,
         year=year,
         month=month,
-        cost_center_id=None,
+        cost_center_id=cost_center_id,
     )
 
     planned_total = _ZERO
@@ -414,6 +418,7 @@ def get_expense_kpis(
     return ExpenseKpisRead(
         year=year,
         month=month,
+        cost_center_id=cost_center_id,
         planned_amount_total=planned_total,
         actual_amount_total=actual_total,
         deviation_amount_total=deviation_total,

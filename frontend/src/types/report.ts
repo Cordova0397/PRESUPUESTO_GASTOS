@@ -59,6 +59,7 @@ export type ExpenseAnalysisFilters = {
 export type ExpenseKpis = {
   year: number | null;
   month: number | null;
+  cost_center_id: number | null;
   planned_amount_total: string;
   actual_amount_total: string;
   deviation_amount_total: string;
@@ -70,4 +71,5 @@ export type ExpenseKpis = {
 export type ExpenseKpisFilters = {
   year?: number;
   month?: number;
+  cost_center_id?: number;
 };

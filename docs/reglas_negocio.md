@@ -73,16 +73,21 @@ El endpoint `GET /api/reports/analysis` calcula un resumen por `(year, month, co
 
 ## KPIs generales del presupuesto
 
-El endpoint `GET /api/reports/kpis` devuelve un único objeto con los totales globales del presupuesto para el filtro de año y/o mes indicado.
+El endpoint `GET /api/reports/kpis` devuelve un único objeto con los totales del presupuesto para el filtro indicado.
 
-- `planned_amount_total`: suma de todos los gastos planificados del filtro.
-- `actual_amount_total`: suma de todos los gastos reales del filtro.
+**Parámetros soportados:** `year`, `month`, `cost_center_id`.
+
+- Si `cost_center_id` no se envía: consolida todos los centros de costo del filtro de año/mes.
+- Si `cost_center_id` se envía: consolida solo ese centro de costo; el "global" es ese centro.
+- `cost_center_id`: centro filtrado, o `null` si se consolidan todos los centros.
+- `planned_amount_total`: suma de los gastos planificados del filtro.
+- `actual_amount_total`: suma de los gastos reales del filtro.
 - `deviation_amount_total = actual_amount_total - planned_amount_total`.
-- `deviation_percentage`: ratio decimal con 4 decimales calculado sobre los totales globales.
+- `deviation_percentage`: ratio decimal con 4 decimales calculado sobre los totales del filtro.
 - `execution_percentage`: ratio decimal con 4 decimales = `actual_amount_total / planned_amount_total`.
 - `status`: estado calculado con las mismas reglas que `/variance` y `/analysis`.
 
-Los porcentajes **no son promedios** de porcentajes por centro o concepto; se calculan sobre los totales globales consolidados.
+Los porcentajes **no son promedios** de porcentajes por centro o concepto; se calculan sobre los totales consolidados del filtro.
 
 | Condición | `deviation_percentage` | `execution_percentage` |
 |---|---|---|

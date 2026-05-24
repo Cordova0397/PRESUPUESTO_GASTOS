@@ -55,6 +55,8 @@ export function getExpenseKpis(
   const params = new URLSearchParams();
   if (filters.year !== undefined) params.set("year", String(filters.year));
   if (filters.month !== undefined) params.set("month", String(filters.month));
+  if (filters.cost_center_id !== undefined)
+    params.set("cost_center_id", String(filters.cost_center_id));
 
   const qs = params.toString();
   return apiFetch<ExpenseKpis>(`/api/reports/kpis${qs ? `?${qs}` : ""}`);
