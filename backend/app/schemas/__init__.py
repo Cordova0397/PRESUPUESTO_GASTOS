@@ -27,3 +27,4 @@ from app.schemas.actual_expense import (  # noqa: F401
     ActualExpenseRead,
     ActualExpenseUpdate,
 )
+from app.schemas.report import PlannedExpenseConsolidatedRead  # noqa: F401

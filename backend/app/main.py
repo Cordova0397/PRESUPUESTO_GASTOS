@@ -5,6 +5,7 @@ from app.api.actual_expenses import router as actual_expenses_router
 from app.api.cost_centers import router as cost_centers_router
 from app.api.expense_concepts import router as expense_concepts_router
 from app.api.planned_expenses import router as planned_expenses_router
+from app.api.reports import router as reports_router
 from app.core.config import settings
 from app.core.database import check_database_connection
 
@@ -15,6 +16,7 @@ app.include_router(cost_centers_router)
 app.include_router(expense_concepts_router)
 app.include_router(planned_expenses_router)
 app.include_router(actual_expenses_router)
+app.include_router(reports_router)
 
 app.add_middleware(
     CORSMiddleware,
