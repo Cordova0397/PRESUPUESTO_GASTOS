@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BudgetVsActualChart } from "../components/dashboard/BudgetVsActualChart";
+import { MonthlyBudgetChart } from "../components/dashboard/MonthlyBudgetChart";
 import { DashboardFilters } from "../components/dashboard/DashboardFilters";
 import { KpiCardsGrid } from "../components/dashboard/KpiCardsGrid";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -145,6 +146,14 @@ export function DashboardPage() {
 
       {/* Gráfico Planificado vs Real */}
       <BudgetVsActualChart
+        records={analysisRecords}
+        isLoading={analysisLoading}
+        error={analysisError}
+        onRetry={handleReload}
+      />
+
+      {/* Gráfico mensual */}
+      <MonthlyBudgetChart
         records={analysisRecords}
         isLoading={analysisLoading}
         error={analysisError}
