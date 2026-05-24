@@ -33,3 +33,4 @@ bundle_*.txt
 *.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+docs/~$BITACORA_presupuesto_costos_app_MVP_actualizada.xlsx
