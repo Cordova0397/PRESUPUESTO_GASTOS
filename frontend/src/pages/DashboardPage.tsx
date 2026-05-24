@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { BudgetVsActualChart } from "../components/dashboard/BudgetVsActualChart";
 import { DashboardFilters } from "../components/dashboard/DashboardFilters";
 import { KpiCardsGrid } from "../components/dashboard/KpiCardsGrid";
 import { PageHeader } from "../components/layout/PageHeader";
-import { getExpenseKpis } from "../services/reportsService";
-import type { ExpenseKpis, ExpenseKpisFilters } from "../types/report";
+import { getExpenseAnalysis, getExpenseKpis } from "../services/reportsService";
+import type { ExpenseAnalysis, ExpenseKpis, ExpenseKpisFilters } from "../types/report";
 import { getCurrentYearInLima } from "../utils/date";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -18,25 +19,54 @@ export function DashboardPage() {
   const [kpis, setKpis] = useState<ExpenseKpis | null>(null);
   const [kpisLoading, setKpisLoading] = useState(true);
   const [kpisError, setKpisError] = useState<string | null>(null);
+
+  const [analysisRecords, setAnalysisRecords] = useState<ExpenseAnalysis[]>([]);
+  const [analysisLoading, setAnalysisLoading] = useState(true);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
   const [activeFilters, setActiveFilters] = useState<ExpenseKpisFilters>({
     year: getCurrentYearInLima(),
   });
-  const loadIdRef = useRef(0);
+
+  const kpisLoadIdRef = useRef(0);
+  const chartLoadIdRef = useRef(0);
 
   const loadKpis = useCallback(async () => {
-    const id = ++loadIdRef.current;
+    const id = ++kpisLoadIdRef.current;
     setKpisLoading(true);
     setKpisError(null);
     try {
       const data = await getExpenseKpis(activeFilters);
-      if (loadIdRef.current === id) setKpis(data);
+      if (kpisLoadIdRef.current === id) setKpis(data);
     } catch (err) {
-      if (loadIdRef.current === id)
+      if (kpisLoadIdRef.current === id)
         setKpisError(
           err instanceof Error ? err.message : "Error al cargar los KPIs.",
         );
     } finally {
-      if (loadIdRef.current === id) setKpisLoading(false);
+      if (kpisLoadIdRef.current === id) setKpisLoading(false);
+    }
+  }, [activeFilters]);
+
+  const loadChartData = useCallback(async () => {
+    const id = ++chartLoadIdRef.current;
+    setAnalysisLoading(true);
+    setAnalysisError(null);
+    try {
+      const data = await getExpenseAnalysis({
+        year: activeFilters.year,
+        month: activeFilters.month,
+      });
+      if (chartLoadIdRef.current === id) setAnalysisRecords(data);
+    } catch (err) {
+      if (chartLoadIdRef.current === id)
+        setAnalysisError(
+          err instanceof Error
+            ? err.message
+            : "Error al cargar el análisis por centro.",
+        );
+    } finally {
+      if (chartLoadIdRef.current === id) setAnalysisLoading(false);
     }
   }, [activeFilters]);
 
@@ -44,12 +74,17 @@ export function DashboardPage() {
     void loadKpis();
   }, [loadKpis]);
 
+  useEffect(() => {
+    void loadChartData();
+  }, [loadChartData]);
+
   function handleFiltersApply(filters: ExpenseKpisFilters) {
     setActiveFilters(filters);
   }
 
   function handleReload() {
     void loadKpis();
+    void loadChartData();
   }
 
   const statusCls = kpis
@@ -79,7 +114,7 @@ export function DashboardPage() {
           <DashboardFilters onApply={handleFiltersApply} onReload={handleReload} />
         </div>
 
-        {/* Error */}
+        {/* Error KPIs */}
         {kpisError && !kpisLoading && (
           <div className="flex items-center gap-4 border-b border-red-100 bg-red-50 px-6 py-4">
             <p className="text-sm text-red-600">{kpisError}</p>
@@ -107,6 +142,14 @@ export function DashboardPage() {
 
       {/* Tarjetas KPI */}
       <KpiCardsGrid kpis={kpis} isLoading={kpisLoading} />
+
+      {/* Gráfico Planificado vs Real */}
+      <BudgetVsActualChart
+        records={analysisRecords}
+        isLoading={analysisLoading}
+        error={analysisError}
+        onRetry={handleReload}
+      />
 
       {/* Regla de negocio */}
       <section className="rounded-[28px] border border-brand-200/70 bg-brand-50 p-6 shadow-panel">
