@@ -4,7 +4,7 @@ import { getActiveExpenseConceptsByCostCenter } from "../../services/catalogsSer
 import type { CostCenter } from "../../types/costCenter";
 import type { ExpenseConcept } from "../../types/expenseConcept";
 import type { ActualExpensesFilters } from "../../types/actualExpense";
-import { getCurrentYearInLima } from "../../utils/date";
+import { getCurrentMonthInLima, getCurrentYearInLima } from "../../utils/date";
 
 const YEAR_OPTIONS = (() => {
   const current = getCurrentYearInLima();
@@ -42,7 +42,7 @@ type DraftFilters = {
 
 const DEFAULT_DRAFT: DraftFilters = {
   year: String(getCurrentYearInLima()),
-  month: "",
+  month: String(getCurrentMonthInLima()),
   cost_center_id: "",
   expense_concept_id: "",
   search: "",

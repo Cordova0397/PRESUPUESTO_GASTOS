@@ -7,6 +7,15 @@ export function getCurrentYearInLima(): number {
   );
 }
 
+export function getCurrentMonthInLima(): number {
+  return parseInt(
+    new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", month: "numeric" }).format(
+      new Date(),
+    ),
+    10,
+  );
+}
+
 /** Devuelve la fecha de hoy en America/Lima como string YYYY-MM-DD. */
 export function getTodayDateInLima(): string {
   const now = new Date();

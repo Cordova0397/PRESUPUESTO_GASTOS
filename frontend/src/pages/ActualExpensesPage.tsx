@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ActualExpenseForm } from "../components/actual-expenses/ActualExpenseForm";
 import { ActualExpensesFilters } from "../components/actual-expenses/ActualExpensesFilters";
+import { ActualExpensesMonthlyMatrix } from "../components/actual-expenses/ActualExpensesMonthlyMatrix";
 import { ActualExpensesSummary } from "../components/actual-expenses/ActualExpensesSummary";
 import { ActualExpensesTable } from "../components/actual-expenses/ActualExpensesTable";
 import { PageHeader } from "../components/layout/PageHeader";
+import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
-import { getActiveCostCenters } from "../services/catalogsService";
+import { getActiveCostCenters, getActiveExpenseConceptsByCostCenter } from "../services/catalogsService";
 import {
   createActualExpense,
   deleteActualExpense,
@@ -15,31 +17,54 @@ import {
 } from "../services/actualExpensesService";
 import type { ActualExpense, ActualExpenseCreatePayload, ActualExpensesFilters as FiltersType } from "../types/actualExpense";
 import type { CostCenter } from "../types/costCenter";
-import { getCurrentYearInLima } from "../utils/date";
+import type { ExpenseConcept } from "../types/expenseConcept";
+import { getCurrentMonthInLima, getCurrentYearInLima } from "../utils/date";
 
 type Msg = { type: "ok" | "error"; text: string };
+type ActualExpensesViewMode = "matrix" | "detail";
+type MatrixFilters = { year: number; cost_center_id?: number };
 
 export function ActualExpensesPage() {
+  // ── Vista ────────────────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<ActualExpensesViewMode>("matrix");
+
+  // ── Centros de costo ─────────────────────────────────────────────────────────
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [ccLoading, setCcLoading] = useState(true);
   const [ccError, setCcError] = useState<string | null>(null);
 
+  // ── Registros transaccionales ────────────────────────────────────────────────
   const [records, setRecords] = useState<ActualExpense[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [recordsError, setRecordsError] = useState<string | null>(null);
 
+  // ── Edición / borrado ────────────────────────────────────────────────────────
   const [editingRecord, setEditingRecord] = useState<ActualExpense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<Msg | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // ── Filtros transaccionales (para la tabla detallada) ────────────────────────
   const [activeFilters, setActiveFilters] = useState<FiltersType>({
+    year: getCurrentYearInLima(),
+    month: getCurrentMonthInLima(),
+  });
+
+  // ── Filtros de matriz (independientes, sin mes/concepto/búsqueda) ─────────────
+  const [matrixFilters, setMatrixFilters] = useState<MatrixFilters>({
     year: getCurrentYearInLima(),
   });
 
+  // ── Datos de la matriz ───────────────────────────────────────────────────────
+  const [matrixRecords, setMatrixRecords] = useState<ActualExpense[]>([]);
+  const [matrixConcepts, setMatrixConcepts] = useState<ExpenseConcept[]>([]);
+  const [matrixLoading, setMatrixLoading] = useState(false);
+  const [matrixError, setMatrixError] = useState<string | null>(null);
+
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadIdRef = useRef(0);
+  const matrixLoadIdRef = useRef(0);
 
   function showMessage(type: "ok" | "error", text: string) {
     if (msgTimer.current) clearTimeout(msgTimer.current);
@@ -47,7 +72,7 @@ export function ActualExpensesPage() {
     msgTimer.current = setTimeout(() => setMessage(null), 6000);
   }
 
-  // Cargar centros de costo
+  // ── Cargar centros de costo ──────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     setCcLoading(true);
@@ -63,12 +88,17 @@ export function ActualExpensesPage() {
       .finally(() => {
         if (!cancelled) setCcLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // Cargar registros de gastos reales
+  // ── Autoasignar primer centro a la matriz ────────────────────────────────────
+  useEffect(() => {
+    if (costCenters.length > 0 && matrixFilters.cost_center_id === undefined) {
+      setMatrixFilters((prev) => ({ ...prev, cost_center_id: costCenters[0].id }));
+    }
+  }, [costCenters, matrixFilters.cost_center_id]);
+
+  // ── Cargar registros transaccionales ────────────────────────────────────────
   const loadRecords = useCallback(async () => {
     const id = ++loadIdRef.current;
     setRecordsLoading(true);
@@ -90,7 +120,51 @@ export function ActualExpensesPage() {
     void loadRecords();
   }, [loadRecords]);
 
-  // Guardar (POST o PUT)
+  // ── Cargar datos de la matriz ────────────────────────────────────────────────
+  const loadMatrixData = useCallback(async () => {
+    const id = ++matrixLoadIdRef.current;
+
+    if (!matrixFilters.year || !matrixFilters.cost_center_id) {
+      setMatrixRecords([]);
+      setMatrixConcepts([]);
+      setMatrixError(null);
+      setMatrixLoading(false);
+      return;
+    }
+
+    setMatrixLoading(true);
+    setMatrixError(null);
+
+    try {
+      const [conceptsData, recordsData] = await Promise.all([
+        getActiveExpenseConceptsByCostCenter(matrixFilters.cost_center_id),
+        getActualExpenses({
+          year: matrixFilters.year,
+          cost_center_id: matrixFilters.cost_center_id,
+        }),
+      ]);
+
+      if (matrixLoadIdRef.current !== id) return;
+
+      setMatrixConcepts(conceptsData);
+      setMatrixRecords(recordsData);
+    } catch (err) {
+      if (matrixLoadIdRef.current !== id) return;
+      setMatrixError(
+        err instanceof Error
+          ? err.message
+          : "Error al cargar el resumen mensual de gastos reales.",
+      );
+    } finally {
+      if (matrixLoadIdRef.current === id) setMatrixLoading(false);
+    }
+  }, [matrixFilters.year, matrixFilters.cost_center_id]);
+
+  useEffect(() => {
+    void loadMatrixData();
+  }, [loadMatrixData]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   async function handleFormSubmit(payload: ActualExpenseCreatePayload) {
     setIsSaving(true);
     setMessage(null);
@@ -104,6 +178,7 @@ export function ActualExpensesPage() {
       }
       setEditingRecord(null);
       await loadRecords();
+      await loadMatrixData();
     } catch (err) {
       showMessage(
         "error",
@@ -141,6 +216,7 @@ export function ActualExpensesPage() {
       showMessage("ok", `Gasto #${targetId} eliminado correctamente.`);
       setDeleteTargetId(null);
       await loadRecords();
+      await loadMatrixData();
     } catch (err) {
       showMessage(
         "error",
@@ -163,19 +239,58 @@ export function ActualExpensesPage() {
 
   function handleReload() {
     void loadRecords();
+    void loadMatrixData();
     setMessage(null);
   }
+
+  // ── Derivados ─────────────────────────────────────────────────────────────────
+  const currentYear = getCurrentYearInLima();
+  const selectedCostCenter = costCenters.find(
+    (cc) => cc.id === matrixFilters.cost_center_id,
+  );
+  const selectedCostCenterLabel = selectedCostCenter
+    ? `${selectedCostCenter.code} — ${selectedCostCenter.name}`
+    : undefined;
 
   const formCardTitle = editingRecord
     ? `Editar gasto #${editingRecord.id}`
     : "Registrar gasto";
 
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       <PageHeader
         title="Gastos reales"
-        description="Registro transaccional de gastos ejecutados."
+        description="Registro y revisión de gastos ejecutados."
       />
+
+      {/* Selector de vista */}
+      <div className="flex w-fit gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setViewMode("matrix")}
+          className={[
+            "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+            viewMode === "matrix"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "text-slate-500 hover:text-slate-700",
+          ].join(" ")}
+        >
+          Resumen mensual
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode("detail")}
+          className={[
+            "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+            viewMode === "detail"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "text-slate-500 hover:text-slate-700",
+          ].join(" ")}
+        >
+          Registro detallado
+        </button>
+      </div>
 
       {/* Mensaje global de éxito/error */}
       {message && (
@@ -191,84 +306,189 @@ export function ActualExpensesPage() {
         </div>
       )}
 
-      {/* Formulario */}
-      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="text-base font-semibold text-slate-950">{formCardTitle}</h2>
-          {editingRecord && (
+      {/* ── Vista matriz ──────────────────────────────────────────────────────── */}
+      {viewMode === "matrix" && (
+        <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <h2 className="text-base font-semibold text-slate-950">
+              Resumen mensual de gastos reales
+            </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Modifica los campos y guarda para actualizar el registro.
+              Vista anual consolidada por concepto para comparar contra la matriz de gastos planificados.
             </p>
-          )}
-        </div>
-
-        <div className="p-6">
-          {ccLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
-              ))}
-            </div>
-          ) : ccError ? (
-            <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
-          ) : (
-            <ActualExpenseForm
-              costCenters={costCenters}
-              editingRecord={editingRecord}
-              isSaving={isSaving}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancelEdit}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Tabla de registros */}
-      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
-        {/* Filtros en la cabecera */}
-        <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="mb-4 text-base font-semibold text-slate-950">
-            Gastos registrados
-          </h2>
-          {ccLoading ? (
-            <div className="flex flex-wrap gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-8 w-32 animate-pulse rounded-lg bg-slate-100" />
-              ))}
-            </div>
-          ) : ccError ? (
-            <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
-          ) : (
-            <ActualExpensesFilters
-              costCenters={costCenters}
-              onApply={handleFiltersApply}
-              onReload={handleReload}
-            />
-          )}
-        </div>
-
-        {/* Error de carga de registros */}
-        {recordsError && !recordsLoading && (
-          <div className="border-b border-slate-100 px-6 py-4">
-            <ErrorState message={recordsError} onRetry={handleReload} compact />
+            <p className="mt-2 text-xs text-slate-400">
+              Esta vista resume transacciones reales por concepto y mes. Para registrar un gasto con
+              proveedor, documento u observación, usa{" "}
+              <button
+                type="button"
+                onClick={() => setViewMode("detail")}
+                className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900"
+              >
+                Registro detallado
+              </button>
+              .
+            </p>
           </div>
-        )}
 
-        {/* Resumen */}
-        <div className="border-b border-slate-100">
-          <ActualExpensesSummary records={records} isLoading={recordsLoading} />
-        </div>
+          {/* Filtros de la matriz */}
+          <div className="border-b border-slate-100 px-6 py-4">
+            {ccLoading ? (
+              <div className="flex gap-3">
+                <div className="h-8 w-24 animate-pulse rounded-lg bg-slate-100" />
+                <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-100" />
+                <div className="h-8 w-24 animate-pulse rounded-lg bg-slate-100" />
+              </div>
+            ) : ccError ? (
+              <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">Año</label>
+                  <select
+                    value={matrixFilters.year}
+                    onChange={(e) =>
+                      setMatrixFilters((prev) => ({ ...prev, year: Number(e.target.value) }))
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200"
+                  >
+                    <option value={currentYear - 1}>{currentYear - 1}</option>
+                    <option value={currentYear}>{currentYear}</option>
+                    <option value={currentYear + 1}>{currentYear + 1}</option>
+                  </select>
+                </div>
 
-        {/* Tabla */}
-        <ActualExpensesTable
-          records={records}
-          isLoading={recordsLoading}
-          editingId={editingRecord?.id ?? null}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      </section>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">Centro de costo</label>
+                  <select
+                    value={matrixFilters.cost_center_id ?? ""}
+                    onChange={(e) =>
+                      setMatrixFilters((prev) => ({
+                        ...prev,
+                        cost_center_id: e.target.value ? Number(e.target.value) : undefined,
+                      }))
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200"
+                  >
+                    <option value="">— Centro —</option>
+                    {costCenters.map((cc) => (
+                      <option key={cc.id} value={cc.id}>
+                        {cc.code} — {cc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
+                <div className="sm:pb-0.5">
+                  <button
+                    type="button"
+                    onClick={() => void loadMatrixData()}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    Recargar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!matrixFilters.cost_center_id ? (
+            <div className="px-6 py-10">
+              <EmptyState message="Selecciona un centro de costo para ver el resumen mensual." />
+            </div>
+          ) : (
+            <ActualExpensesMonthlyMatrix
+              concepts={matrixConcepts}
+              records={matrixRecords}
+              isLoading={matrixLoading}
+              error={matrixError}
+              year={matrixFilters.year}
+              costCenterLabel={selectedCostCenterLabel}
+              onRetry={loadMatrixData}
+            />
+          )}
+        </section>
+      )}
+
+      {/* ── Vista detallada ───────────────────────────────────────────────────── */}
+      {viewMode === "detail" && (
+        <>
+          {/* Formulario */}
+          <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h2 className="text-base font-semibold text-slate-950">{formCardTitle}</h2>
+              {editingRecord && (
+                <p className="mt-1 text-sm text-slate-500">
+                  Modifica los campos y guarda para actualizar el registro.
+                </p>
+              )}
+            </div>
+
+            <div className="p-6">
+              {ccLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+                  ))}
+                </div>
+              ) : ccError ? (
+                <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
+              ) : (
+                <ActualExpenseForm
+                  costCenters={costCenters}
+                  editingRecord={editingRecord}
+                  isSaving={isSaving}
+                  onSubmit={handleFormSubmit}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+            </div>
+          </section>
+
+          {/* Tabla de registros */}
+          <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-panel">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h2 className="mb-4 text-base font-semibold text-slate-950">
+                Gastos registrados
+              </h2>
+              {ccLoading ? (
+                <div className="flex flex-wrap gap-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-8 w-32 animate-pulse rounded-lg bg-slate-100" />
+                  ))}
+                </div>
+              ) : ccError ? (
+                <ErrorState message={ccError} onRetry={() => window.location.reload()} compact />
+              ) : (
+                <ActualExpensesFilters
+                  costCenters={costCenters}
+                  onApply={handleFiltersApply}
+                  onReload={handleReload}
+                />
+              )}
+            </div>
+
+            {recordsError && !recordsLoading && (
+              <div className="border-b border-slate-100 px-6 py-4">
+                <ErrorState message={recordsError} onRetry={handleReload} compact />
+              </div>
+            )}
+
+            <div className="border-b border-slate-100">
+              <ActualExpensesSummary records={records} isLoading={recordsLoading} />
+            </div>
+
+            <ActualExpensesTable
+              records={records}
+              isLoading={recordsLoading}
+              editingId={editingRecord?.id ?? null}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </section>
+        </>
+      )}
+
+      {/* Modal de confirmación de borrado (disponible en ambas vistas) */}
       {deleteTargetId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
           <div
@@ -284,8 +504,7 @@ export function ActualExpensesPage() {
               Eliminar gasto real
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              ¿Eliminar el gasto real #{deleteTargetId}? Esta acción no se puede
-              deshacer.
+              ¿Eliminar el gasto real #{deleteTargetId}? Esta acción no se puede deshacer.
             </p>
 
             <div className="mt-6 flex justify-end gap-3">
