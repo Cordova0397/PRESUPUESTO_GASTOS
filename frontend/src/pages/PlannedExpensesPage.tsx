@@ -262,6 +262,13 @@ export function PlannedExpensesPage() {
           </div>
         )}
 
+        {hasErrors && (
+          <div className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">
+            Corrige los montos marcados en rojo antes de guardar. Usa solo
+            números positivos o cero, con máximo 2 decimales.
+          </div>
+        )}
+
         <div className="min-h-[200px]">
           {isLoadingData ? (
             <div className="overflow-x-auto scrollbar-thin">

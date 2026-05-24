@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { isValidMoneyInput } from "../../utils/money";
 
 type Props = {
@@ -12,10 +12,10 @@ export function PlannedExpenseCell({ value, existingId, disabled, onChange }: Pr
   const [localValue, setLocalValue] = useState(value);
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const errorId = useId();
 
   useEffect(() => {
     setLocalValue(value);
-    setTouched(false);
   }, [value]);
 
   const invalid = touched && !isValidMoneyInput(localValue);
@@ -25,7 +25,7 @@ export function PlannedExpenseCell({ value, existingId, disabled, onChange }: Pr
   const showError = invalid || existingButEmpty;
   const errorMsg = existingButEmpty
     ? "Ingresa 0 si deseas presupuesto cero"
-    : "Monto inválido";
+    : "Monto inválido. Usa solo números positivos o cero, con máximo 2 decimales.";
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLocalValue(e.target.value);
@@ -57,9 +57,14 @@ export function PlannedExpenseCell({ value, existingId, disabled, onChange }: Pr
         ].join(" ")}
         style={{ minWidth: "82px" }}
         aria-invalid={showError}
+        aria-describedby={showError ? errorId : undefined}
+        title={showError ? errorMsg : undefined}
       />
       {showError && (
-        <p className="absolute right-0 top-full z-10 mt-0.5 whitespace-nowrap rounded bg-red-600 px-2 py-0.5 text-xs text-white shadow">
+        <p
+          id={errorId}
+          className="absolute right-0 top-full z-10 mt-0.5 whitespace-nowrap rounded bg-red-600 px-2 py-0.5 text-xs text-white shadow"
+        >
           {errorMsg}
         </p>
       )}
