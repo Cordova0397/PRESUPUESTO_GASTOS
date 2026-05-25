@@ -1,28 +1,30 @@
 import type {
   PlannedExpense,
   PlannedExpenseCreatePayload,
-  PlannedExpensePatchPayload,
+  PlannedExpenseUpdatePayload,
 } from "../types/plannedExpense";
 import { ApiError } from "./apiClient";
 
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://127.0.0.1:8000";
 
-async function apiMutate<T>(
+async function apiRequest<T>(
   path: string,
-  method: "POST" | "PATCH",
-  body: unknown,
+  method: "POST" | "PUT" | "DELETE",
+  body?: unknown,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const init: RequestInit = { method };
+  if (body !== undefined) {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(body);
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, init);
   if (!response.ok) {
     let detail = "";
     try {
       const data = await response.json();
-      detail = typeof data?.detail === "string" ? data.detail : JSON.stringify(data);
+      detail =
+        typeof data?.detail === "string" ? data.detail : JSON.stringify(data);
     } catch {
       detail = `Error HTTP ${response.status}`;
     }
@@ -32,8 +34,10 @@ async function apiMutate<T>(
 }
 
 export type GetPlannedExpensesParams = {
-  year: number;
-  cost_center_id: number;
+  year?: number;
+  month?: number;
+  cost_center_id?: number;
+  expense_concept_id?: number;
 };
 
 const PAGE_LIMIT = 200;
@@ -42,18 +46,27 @@ async function fetchPlannedExpensesPage(
   params: GetPlannedExpensesParams,
   skip: number,
 ): Promise<PlannedExpense[]> {
-  const qs = new URLSearchParams({
-    year: String(params.year),
-    cost_center_id: String(params.cost_center_id),
+  const qsParams: Record<string, string> = {
     limit: String(PAGE_LIMIT),
     skip: String(skip),
-  });
-  const response = await fetch(`${API_BASE_URL}/api/planned-expenses?${qs.toString()}`);
+  };
+  if (params.year !== undefined) qsParams.year = String(params.year);
+  if (params.month !== undefined) qsParams.month = String(params.month);
+  if (params.cost_center_id !== undefined)
+    qsParams.cost_center_id = String(params.cost_center_id);
+  if (params.expense_concept_id !== undefined)
+    qsParams.expense_concept_id = String(params.expense_concept_id);
+
+  const qs = new URLSearchParams(qsParams);
+  const response = await fetch(
+    `${API_BASE_URL}/api/planned-expenses?${qs.toString()}`,
+  );
   if (!response.ok) {
     let detail = "";
     try {
       const data = await response.json();
-      detail = typeof data?.detail === "string" ? data.detail : JSON.stringify(data);
+      detail =
+        typeof data?.detail === "string" ? data.detail : JSON.stringify(data);
     } catch {
       detail = `Error HTTP ${response.status}`;
     }
@@ -63,7 +76,7 @@ async function fetchPlannedExpensesPage(
 }
 
 export async function getPlannedExpenses(
-  params: GetPlannedExpensesParams,
+  params: GetPlannedExpensesParams = {},
 ): Promise<PlannedExpense[]> {
   const all: PlannedExpense[] = [];
   let skip = 0;
@@ -79,12 +92,21 @@ export async function getPlannedExpenses(
 export function createPlannedExpense(
   payload: PlannedExpenseCreatePayload,
 ): Promise<PlannedExpense> {
-  return apiMutate<PlannedExpense>("/api/planned-expenses", "POST", payload);
+  return apiRequest<PlannedExpense>("/api/planned-expenses", "POST", payload);
 }
 
-export function patchPlannedExpense(
+export function updatePlannedExpense(
   id: number,
-  payload: PlannedExpensePatchPayload,
+  payload: PlannedExpenseUpdatePayload,
 ): Promise<PlannedExpense> {
-  return apiMutate<PlannedExpense>(`/api/planned-expenses/${id}`, "PATCH", payload);
+  return apiRequest<PlannedExpense>(`/api/planned-expenses/${id}`, "PUT", payload);
+}
+
+export function deletePlannedExpense(
+  id: number,
+): Promise<{ ok: boolean; message: string; id: number }> {
+  return apiRequest<{ ok: boolean; message: string; id: number }>(
+    `/api/planned-expenses/${id}`,
+    "DELETE",
+  );
 }

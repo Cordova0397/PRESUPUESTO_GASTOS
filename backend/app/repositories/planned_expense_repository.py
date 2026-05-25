@@ -26,10 +26,10 @@ def list_planned_expenses(
     if expense_concept_id is not None:
         stmt = stmt.where(PlannedExpense.expense_concept_id == expense_concept_id)
     stmt = stmt.order_by(
-        PlannedExpense.year.asc(),
-        PlannedExpense.month.asc(),
+        PlannedExpense.planned_date.asc(),
         PlannedExpense.cost_center_id.asc(),
         PlannedExpense.expense_concept_id.asc(),
+        PlannedExpense.id.asc(),
     )
     stmt = stmt.offset(skip).limit(limit)
     return list(db.scalars(stmt).all())
@@ -37,22 +37,6 @@ def list_planned_expenses(
 
 def get_planned_expense_by_id(db: Session, planned_expense_id: int) -> PlannedExpense | None:
     return db.get(PlannedExpense, planned_expense_id)
-
-
-def get_planned_expense_by_unique_key(
-    db: Session,
-    year: int,
-    month: int,
-    cost_center_id: int,
-    expense_concept_id: int,
-) -> PlannedExpense | None:
-    stmt = select(PlannedExpense).where(
-        PlannedExpense.year == year,
-        PlannedExpense.month == month,
-        PlannedExpense.cost_center_id == cost_center_id,
-        PlannedExpense.expense_concept_id == expense_concept_id,
-    )
-    return db.scalars(stmt).first()
 
 
 def create_planned_expense(db: Session, data: dict) -> PlannedExpense:

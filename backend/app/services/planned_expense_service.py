@@ -1,6 +1,8 @@
 """Logica de negocio para gastos planificados."""
 from __future__ import annotations
 
+from datetime import date as date_type
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -60,26 +62,17 @@ def _validate_concept_in_center(
         )
 
 
-def _validate_unique_key(
-    db: Session,
-    year: int,
-    month: int,
-    cost_center_id: int,
-    expense_concept_id: int,
-    exclude_id: int | None = None,
-) -> None:
-    existing = repo.get_planned_expense_by_unique_key(
-        db, year, month, cost_center_id, expense_concept_id
-    )
-    if existing and (exclude_id is None or existing.id != exclude_id):
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                f"Ya existe un gasto planificado para el año {year}, "
-                f"mes {month}, centro id={cost_center_id} "
-                f"y concepto id={expense_concept_id}."
-            ),
-        )
+def _derive_year_month(planned_date: date_type) -> tuple[int, int]:
+    """Deriva anio y mes desde la fecha planificada."""
+    return planned_date.year, planned_date.month
+
+
+def _strip_or_none(val: str | None) -> str | None:
+    """Normaliza un string opcional: strip y None si vacio."""
+    if val is None:
+        return None
+    stripped = val.strip()
+    return stripped if stripped else None
 
 
 def _build_read(entity: PlannedExpense) -> PlannedExpenseRead:
@@ -88,11 +81,15 @@ def _build_read(entity: PlannedExpense) -> PlannedExpenseRead:
     ec = entity.expense_concept
     return PlannedExpenseRead(
         id=entity.id,
+        planned_date=entity.planned_date,
         year=entity.year,
         month=entity.month,
         cost_center_id=entity.cost_center_id,
         expense_concept_id=entity.expense_concept_id,
         amount=entity.amount,
+        supplier=entity.supplier,
+        document_number=entity.document_number,
+        description=entity.description,
         notes=entity.notes,
         created_at=entity.created_at,
         updated_at=entity.updated_at,
@@ -140,16 +137,18 @@ def create_planned_expense(
 ) -> PlannedExpenseRead:
     _validate_cost_center(db, payload.cost_center_id)
     _validate_concept_in_center(db, payload.cost_center_id, payload.expense_concept_id)
-    _validate_unique_key(
-        db, payload.year, payload.month, payload.cost_center_id, payload.expense_concept_id
-    )
+    year, month = _derive_year_month(payload.planned_date)
     data = {
-        "year": payload.year,
-        "month": payload.month,
+        "planned_date": payload.planned_date,
+        "year": year,
+        "month": month,
         "cost_center_id": payload.cost_center_id,
         "expense_concept_id": payload.expense_concept_id,
         "amount": payload.amount,
-        "notes": payload.notes.strip() if payload.notes else None,
+        "supplier": _strip_or_none(payload.supplier),
+        "document_number": _strip_or_none(payload.document_number),
+        "description": _strip_or_none(payload.description),
+        "notes": _strip_or_none(payload.notes),
     }
     entity = repo.create_planned_expense(db, data)
     return _build_read(entity)
@@ -161,21 +160,18 @@ def update_planned_expense(
     entity = _get_entity(db, planned_expense_id)
     _validate_cost_center(db, payload.cost_center_id)
     _validate_concept_in_center(db, payload.cost_center_id, payload.expense_concept_id)
-    _validate_unique_key(
-        db,
-        payload.year,
-        payload.month,
-        payload.cost_center_id,
-        payload.expense_concept_id,
-        exclude_id=entity.id,
-    )
+    year, month = _derive_year_month(payload.planned_date)
     data = {
-        "year": payload.year,
-        "month": payload.month,
+        "planned_date": payload.planned_date,
+        "year": year,
+        "month": month,
         "cost_center_id": payload.cost_center_id,
         "expense_concept_id": payload.expense_concept_id,
         "amount": payload.amount,
-        "notes": payload.notes.strip() if payload.notes else None,
+        "supplier": _strip_or_none(payload.supplier),
+        "document_number": _strip_or_none(payload.document_number),
+        "description": _strip_or_none(payload.description),
+        "notes": _strip_or_none(payload.notes),
     }
     updated = repo.update_planned_expense(db, entity, data)
     return _build_read(updated)
@@ -189,43 +185,40 @@ def patch_planned_expense(
     if not changes:
         return _build_read(entity)
 
-    # Estado final combinando entidad actual + cambios enviados
-    final_year = changes.get("year", entity.year)
-    final_month = changes.get("month", entity.month)
+    data: dict = {}
+
+    # Derivar year/month si cambia planned_date
+    if "planned_date" in changes:
+        new_date = changes["planned_date"]
+        year, month = _derive_year_month(new_date)
+        data["planned_date"] = new_date
+        data["year"] = year
+        data["month"] = month
+
+    # Validar centro si cambia
     final_cc_id = changes.get("cost_center_id", entity.cost_center_id)
     final_ec_id = changes.get("expense_concept_id", entity.expense_concept_id)
 
-    key_fields = {"year", "month", "cost_center_id", "expense_concept_id"}
-    key_changed = bool(key_fields & changes.keys())
-
-    # Validar centro si cambia
     if "cost_center_id" in changes:
         _validate_cost_center(db, final_cc_id)
+        data["cost_center_id"] = final_cc_id
 
-    # Validar pertenencia si cambia centro o concepto
     if "cost_center_id" in changes or "expense_concept_id" in changes:
         _validate_concept_in_center(db, final_cc_id, final_ec_id)
 
-    # Validar unicidad si cambia algún campo de la clave
-    if key_changed:
-        _validate_unique_key(
-            db, final_year, final_month, final_cc_id, final_ec_id, exclude_id=entity.id
-        )
-
-    data: dict = {}
-    if "year" in changes:
-        data["year"] = changes["year"]
-    if "month" in changes:
-        data["month"] = changes["month"]
-    if "cost_center_id" in changes:
-        data["cost_center_id"] = changes["cost_center_id"]
     if "expense_concept_id" in changes:
-        data["expense_concept_id"] = changes["expense_concept_id"]
+        data["expense_concept_id"] = final_ec_id
+
     if "amount" in changes:
         data["amount"] = changes["amount"]
+    if "supplier" in changes:
+        data["supplier"] = _strip_or_none(changes["supplier"])
+    if "document_number" in changes:
+        data["document_number"] = _strip_or_none(changes["document_number"])
+    if "description" in changes:
+        data["description"] = _strip_or_none(changes["description"])
     if "notes" in changes:
-        val = changes["notes"]
-        data["notes"] = val.strip() if val else None
+        data["notes"] = _strip_or_none(changes["notes"])
 
     if not data:
         return _build_read(entity)
@@ -244,7 +237,7 @@ def delete_planned_expense(
         ok=True,
         message=(
             f"Gasto planificado id={saved_id} eliminado correctamente. "
-            "En fases posteriores con auditoría se evaluará baja lógica."
+            "En fases posteriores con auditoria se evaluara baja logica."
         ),
         id=saved_id,
     )

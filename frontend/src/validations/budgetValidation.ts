@@ -165,6 +165,58 @@ export const actualExpenseFormSchema = z
     notes: data.notes.trim() || null,
   }));
 
+// ─── Schema del formulario de gasto planificado ──────────────────────────────
+
+/**
+ * Monto planificado en formulario como string. Acepta 0 pero exige no vacío.
+ * Normaliza a "X.YY" con punto decimal.
+ */
+const plannedFormAmountSchema = z
+  .string()
+  .min(1, { message: "Ingresa un monto válido (puede ser cero)." })
+  .superRefine((val, ctx) => {
+    const trimmed = val.trim();
+    const normalized = normalizeDecimalSeparator(trimmed);
+    if (normalized.startsWith("-")) {
+      ctx.addIssue({ code: "custom" as const, message: "El monto no puede ser negativo." });
+      return;
+    }
+    if (!isMoneyFormat(normalized)) {
+      ctx.addIssue({ code: "custom" as const, message: "El monto debe tener máximo 2 decimales." });
+    }
+  })
+  .transform((val) => {
+    return normalizeMoneyToTwoDecimals(normalizeDecimalSeparator(val.trim()));
+  });
+
+/**
+ * Valida y transforma el FormState del formulario de gasto planificado.
+ *
+ * Input:  todos los campos como string (estado del formulario React).
+ * Output: payload tipado listo para enviar al backend.
+ */
+export const plannedExpenseFormSchema = z
+  .object({
+    planned_date: z.string().min(1, { message: "La fecha planificada es obligatoria." }),
+    cost_center_id: costCenterIdFormSchema,
+    expense_concept_id: expenseConceptIdFormSchema,
+    amount: plannedFormAmountSchema,
+    supplier: z.string(),
+    document_number: z.string(),
+    description: z.string(),
+    notes: z.string(),
+  })
+  .transform((data) => ({
+    planned_date: data.planned_date,
+    cost_center_id: data.cost_center_id,
+    expense_concept_id: data.expense_concept_id,
+    amount: data.amount,
+    supplier: data.supplier.trim() || null,
+    document_number: data.document_number.trim() || null,
+    description: data.description.trim() || null,
+    notes: data.notes.trim() || null,
+  }));
+
 // ─── Schemas de filtros ───────────────────────────────────────────────────────
 
 export const yearStringSchema = z
