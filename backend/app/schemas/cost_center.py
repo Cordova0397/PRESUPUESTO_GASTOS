@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CostCenterCreate(BaseModel):
-    code: str = Field(..., min_length=1, max_length=30)
+    code: str | None = Field(default=None, min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = None
     color: str | None = Field(default=None, max_length=30)
@@ -16,7 +16,7 @@ class CostCenterCreate(BaseModel):
 
 
 class CostCenterUpdate(BaseModel):
-    code: str = Field(..., min_length=1, max_length=30)
+    code: str | None = Field(default=None, min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = None
     color: str | None = Field(default=None, max_length=30)

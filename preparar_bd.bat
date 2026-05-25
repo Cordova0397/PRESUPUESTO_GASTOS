@@ -15,6 +15,7 @@ set "VENV_ACTIVATE=%BACKEND%\.venv\Scripts\activate.bat"
 set "ENV_FILE=%BACKEND%\.env"
 set "ENV_EXAMPLE=%BACKEND%\.env.example"
 set "SEED_SCRIPT=%ROOT%scripts\seed_initial_catalogs.py"
+set "REPAIR_SCRIPT=%ROOT%scripts\repair_catalog_sort_order.py"
 
 cd /d "%ROOT%"
 
@@ -65,6 +66,12 @@ if not exist "%SEED_SCRIPT%" (
     goto :error
 )
 
+if not exist "%REPAIR_SCRIPT%" (
+    echo [ERROR] No existe el script de normalizacion de orden:
+    echo         %REPAIR_SCRIPT%
+    goto :error
+)
+
 echo [INFO] Activando entorno virtual...
 call "%VENV_ACTIVATE%"
 if errorlevel 1 (
@@ -73,7 +80,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [1/5] Verificando sintaxis del backend...
+echo [1/6] Verificando sintaxis del backend...
 cd /d "%BACKEND%"
 "%VENV_PY%" -m compileall app -q
 if errorlevel 1 (
@@ -82,7 +89,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/5] Estado actual de Alembic...
+echo [2/6] Estado actual de Alembic...
 alembic current
 if errorlevel 1 (
     echo [ERROR] Fallo alembic current.
@@ -91,7 +98,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/5] Aplicando migraciones Alembic...
+echo [3/6] Aplicando migraciones Alembic...
 alembic upgrade head
 if errorlevel 1 (
     echo [ERROR] Fallo alembic upgrade head.
@@ -99,7 +106,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/5] Confirmando revision actual...
+echo [4/6] Confirmando revision actual...
 alembic current
 if errorlevel 1 (
     echo [ERROR] Fallo alembic current despues de migrar.
@@ -107,11 +114,19 @@ if errorlevel 1 (
 )
 
 echo.
-echo [5/5] Cargando catalogos iniciales...
+echo [5/6] Cargando catalogos iniciales...
 cd /d "%ROOT%"
 "%VENV_PY%" "%SEED_SCRIPT%"
 if errorlevel 1 (
     echo [ERROR] Fallo la carga de catalogos iniciales.
+    goto :error
+)
+
+echo.
+echo [6/6] Normalizando orden de catalogos segun Excel...
+"%VENV_PY%" "%REPAIR_SCRIPT%"
+if errorlevel 1 (
+    echo [ERROR] Fallo la normalizacion del orden de catalogos.
     goto :error
 )
 

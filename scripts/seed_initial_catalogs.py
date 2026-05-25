@@ -26,7 +26,8 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _BACKEND = os.path.join(_ROOT, "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, _BACKEND)
-
+# pydantic_settings busca .env relativo al CWD; aseguramos que sea backend/
+os.chdir(_BACKEND)
 
 from sqlalchemy.orm import Session
 

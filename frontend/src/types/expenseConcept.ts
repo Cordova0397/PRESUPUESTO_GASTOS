@@ -9,3 +9,17 @@ export type ExpenseConcept = {
   created_at: string;
   updated_at: string;
 };
+
+export type ExpenseConceptCreatePayload = {
+  name: string;
+  description?: string | null;
+  sort_order?: number | null;
+  is_active?: boolean;
+};
+
+export type ExpenseConceptUpdatePayload = {
+  name: string;
+  description?: string | null;
+  sort_order?: number | null;
+  is_active?: boolean;
+};

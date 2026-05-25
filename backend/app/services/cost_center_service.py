@@ -1,6 +1,9 @@
 """Logica de negocio para centros de costo."""
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -39,6 +42,15 @@ def _normalize_code(code: str) -> str:
     return code.strip().upper()
 
 
+def _slugify_code(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    upper = normalized.upper()
+    slug = re.sub(r"[^A-Z0-9]+", "_", upper)
+    slug = slug.strip("_")
+    slug = slug[:30]
+    return slug if slug else "CENTRO"
+
+
 def _validate_code_unique(db: Session, code: str, exclude_id: int | None = None) -> None:
     existing = repo.get_cost_center_by_code(db, code)
     if existing and (exclude_id is None or existing.id != exclude_id):
@@ -48,15 +60,39 @@ def _validate_code_unique(db: Session, code: str, exclude_id: int | None = None)
         )
 
 
+def _get_next_sort_order(db: Session) -> int:
+    current_max = repo.get_max_sort_order(db)
+    return (current_max or 0) + 10
+
+
+def _generate_unique_code(db: Session, name: str, exclude_id: int | None = None) -> str:
+    base = _slugify_code(name)
+    existing = repo.get_cost_center_by_code(db, base)
+    if existing is None or (exclude_id is not None and existing.id == exclude_id):
+        return base
+    for i in range(2, 1000):
+        suffix = f"_{i}"
+        max_base = 30 - len(suffix)
+        candidate = base[:max_base] + suffix
+        existing = repo.get_cost_center_by_code(db, candidate)
+        if existing is None or (exclude_id is not None and existing.id == exclude_id):
+            return candidate
+    return base
+
+
 def create_cost_center(db: Session, payload: CostCenterCreate) -> CostCenter:
-    code = _normalize_code(payload.code)
-    _validate_code_unique(db, code)
+    if payload.code:
+        code = _normalize_code(payload.code)
+        _validate_code_unique(db, code)
+    else:
+        code = _generate_unique_code(db, payload.name)
+    sort_order = payload.sort_order if payload.sort_order is not None else _get_next_sort_order(db)
     data = {
         "code": code,
         "name": payload.name.strip(),
         "description": payload.description.strip() if payload.description else None,
         "color": payload.color.strip() if payload.color else None,
-        "sort_order": payload.sort_order,
+        "sort_order": sort_order,
         "is_active": payload.is_active,
     }
     return repo.create_cost_center(db, data)
@@ -66,14 +102,18 @@ def update_cost_center(
     db: Session, cost_center_id: int, payload: CostCenterUpdate
 ) -> CostCenter:
     entity = get_cost_center(db, cost_center_id)
-    code = _normalize_code(payload.code)
-    _validate_code_unique(db, code, exclude_id=entity.id)
+    if payload.code:
+        code = _normalize_code(payload.code)
+        _validate_code_unique(db, code, exclude_id=entity.id)
+    else:
+        code = entity.code
+    sort_order = payload.sort_order if payload.sort_order is not None else entity.sort_order
     data = {
         "code": code,
         "name": payload.name.strip(),
         "description": payload.description.strip() if payload.description else None,
         "color": payload.color.strip() if payload.color else None,
-        "sort_order": payload.sort_order,
+        "sort_order": sort_order,
         "is_active": payload.is_active,
     }
     return repo.update_cost_center(db, entity, data)

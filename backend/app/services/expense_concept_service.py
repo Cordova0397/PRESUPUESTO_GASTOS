@@ -1,6 +1,9 @@
 """Logica de negocio para conceptos de gasto."""
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -30,6 +33,15 @@ def _normalize_code(code: str) -> str:
     return code.strip().upper()
 
 
+def _slugify_code(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    upper = normalized.upper()
+    slug = re.sub(r"[^A-Z0-9]+", "_", upper)
+    slug = slug.strip("_")
+    slug = slug[:30]
+    return slug if slug else "CONCEPTO"
+
+
 def _validate_code_unique(
     db: Session,
     cost_center_id: int,
@@ -42,6 +54,31 @@ def _validate_code_unique(
             status_code=409,
             detail=f"Ya existe un concepto con el codigo '{code}' en este centro de costo.",
         )
+
+
+def _get_next_sort_order(db: Session, cost_center_id: int) -> int:
+    current_max = repo.get_max_sort_order_by_center(db, cost_center_id)
+    return (current_max or 0) + 10
+
+
+def _generate_unique_code(
+    db: Session,
+    cost_center_id: int,
+    name: str,
+    exclude_id: int | None = None,
+) -> str:
+    base = _slugify_code(name)
+    existing = repo.get_expense_concept_by_center_and_code(db, cost_center_id, base)
+    if existing is None or (exclude_id is not None and existing.id == exclude_id):
+        return base
+    for i in range(2, 1000):
+        suffix = f"_{i}"
+        max_base = 30 - len(suffix)
+        candidate = base[:max_base] + suffix
+        existing = repo.get_expense_concept_by_center_and_code(db, cost_center_id, candidate)
+        if existing is None or (exclude_id is not None and existing.id == exclude_id):
+            return candidate
+    return base
 
 
 def _get_concept_in_center(
@@ -98,14 +135,18 @@ def create_expense_concept(
                 f"'{center.name}' porque esta inactivo."
             ),
         )
-    code = _normalize_code(payload.code)
-    _validate_code_unique(db, cost_center_id, code)
+    if payload.code:
+        code = _normalize_code(payload.code)
+        _validate_code_unique(db, cost_center_id, code)
+    else:
+        code = _generate_unique_code(db, cost_center_id, payload.name)
+    sort_order = payload.sort_order if payload.sort_order is not None else _get_next_sort_order(db, cost_center_id)
     data = {
         "cost_center_id": cost_center_id,
         "code": code,
         "name": payload.name.strip(),
         "description": payload.description.strip() if payload.description else None,
-        "sort_order": payload.sort_order,
+        "sort_order": sort_order,
         "is_active": payload.is_active,
     }
     return repo.create_expense_concept(db, data)
@@ -119,13 +160,17 @@ def update_expense_concept(
 ) -> ExpenseConcept:
     _get_cost_center(db, cost_center_id)
     entity = _get_concept_in_center(db, cost_center_id, expense_concept_id)
-    code = _normalize_code(payload.code)
-    _validate_code_unique(db, cost_center_id, code, exclude_id=entity.id)
+    if payload.code:
+        code = _normalize_code(payload.code)
+        _validate_code_unique(db, cost_center_id, code, exclude_id=entity.id)
+    else:
+        code = entity.code
+    sort_order = payload.sort_order if payload.sort_order is not None else entity.sort_order
     data = {
         "code": code,
         "name": payload.name.strip(),
         "description": payload.description.strip() if payload.description else None,
-        "sort_order": payload.sort_order,
+        "sort_order": sort_order,
         "is_active": payload.is_active,
     }
     return repo.update_expense_concept(db, entity, data)

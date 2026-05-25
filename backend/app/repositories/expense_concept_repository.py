@@ -26,14 +26,21 @@ def list_expense_concepts(
                 ExpenseConcept.name.ilike(pattern),
             )
         )
-    # MySQL no soporta NULLS LAST; ISNULL() devuelve 1 para NULL → queda al final en ASC
+    # MySQL no soporta NULLS LAST; func.isnull() devuelve 1 para NULL → va al final en ASC
     stmt = stmt.order_by(
         func.isnull(ExpenseConcept.sort_order),
         ExpenseConcept.sort_order.asc(),
-        ExpenseConcept.name.asc(),
+        ExpenseConcept.id.asc(),
     )
     stmt = stmt.offset(skip).limit(limit)
     return list(db.scalars(stmt).all())
+
+
+def get_max_sort_order_by_center(db: Session, cost_center_id: int) -> int | None:
+    stmt = select(func.max(ExpenseConcept.sort_order)).where(
+        ExpenseConcept.cost_center_id == cost_center_id
+    )
+    return db.scalar(stmt)
 
 
 def get_expense_concept_by_id(db: Session, expense_concept_id: int) -> ExpenseConcept | None:

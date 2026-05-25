@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExpenseConceptCreate(BaseModel):
-    code: str = Field(..., min_length=1, max_length=30)
+    code: str | None = Field(default=None, min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = None
     sort_order: int | None = None
@@ -15,7 +15,7 @@ class ExpenseConceptCreate(BaseModel):
 
 
 class ExpenseConceptUpdate(BaseModel):
-    code: str = Field(..., min_length=1, max_length=30)
+    code: str | None = Field(default=None, min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = None
     sort_order: int | None = None

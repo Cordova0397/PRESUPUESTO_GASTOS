@@ -25,11 +25,11 @@ def list_cost_centers(
                 CostCenter.name.ilike(pattern),
             )
         )
-    # MySQL no soporta NULLS LAST; ISNULL() devuelve 1 para NULL → queda al final en ASC
+    # MySQL no soporta NULLS LAST; func.isnull() devuelve 1 para NULL → va al final en ASC
     stmt = stmt.order_by(
         func.isnull(CostCenter.sort_order),
         CostCenter.sort_order.asc(),
-        CostCenter.name.asc(),
+        CostCenter.id.asc(),
     )
     stmt = stmt.offset(skip).limit(limit)
     return list(db.scalars(stmt).all())
@@ -37,6 +37,11 @@ def list_cost_centers(
 
 def get_cost_center_by_id(db: Session, cost_center_id: int) -> CostCenter | None:
     return db.get(CostCenter, cost_center_id)
+
+
+def get_max_sort_order(db: Session) -> int | None:
+    stmt = select(func.max(CostCenter.sort_order))
+    return db.scalar(stmt)
 
 
 def get_cost_center_by_code(db: Session, code: str) -> CostCenter | None:
